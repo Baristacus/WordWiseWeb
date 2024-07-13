@@ -3,7 +3,12 @@ function createWordList() {
         const wordList = document.getElementById('word-list');
         wordList.innerHTML = '';
 
-        const sortedWords = Object.keys(items).sort((a, b) => {
+        // 실제 단어 데이터만 필터링
+        const validWords = Object.keys(items).filter(key =>
+            items[key] && typeof items[key] === 'object' && items[key].meaning && items[key].date
+        );
+
+        const sortedWords = validWords.sort((a, b) => {
             return new Date(items[b].date) - new Date(items[a].date);
         });
 
@@ -11,12 +16,13 @@ function createWordList() {
             const wordItem = document.createElement('div');
             wordItem.className = 'word-item';
 
+            const wordHeader = document.createElement('div');
+            wordHeader.className = 'word-header';
+
             const wordText = document.createElement('span');
             wordText.className = 'word-text';
             const savedDate = new Date(items[word].date).toLocaleDateString();
             wordText.textContent = `${word} (${savedDate})`;
-
-            wordItem.appendChild(wordText);
 
             const deleteBtn = document.createElement('button');
             deleteBtn.className = 'delete-btn';
@@ -26,50 +32,66 @@ function createWordList() {
                 deleteWord(word);
             });
 
-            wordItem.appendChild(deleteBtn);
+            wordHeader.appendChild(wordText);
+            wordHeader.appendChild(deleteBtn);
 
-            wordItem.addEventListener('click', function () {
-                toggleWordInfo(wordItem, items[word].meaning);
+            const wordMeaning = document.createElement('div');
+            wordMeaning.className = 'word-meaning';
+
+            try {
+                console.log('Word meaning:', items[word].meaning); // 디버깅용 로그
+                const parsedMeaning = marked.parse(items[word].meaning);
+                wordMeaning.innerHTML = DOMPurify.sanitize(parsedMeaning);
+            } catch (error) {
+                console.error('Error parsing word meaning:', error);
+                wordMeaning.textContent = '의미를 표시하는 중 오류가 발생했습니다.';
+            }
+
+            wordItem.appendChild(wordHeader);
+            wordItem.appendChild(wordMeaning);
+
+            wordHeader.addEventListener('click', function () {
+                toggleWordMeaning(wordMeaning);
             });
 
             wordList.appendChild(wordItem);
         });
+
+        // 임시 데이터 정리
+        cleanupTemporaryData();
     });
 }
 
-function toggleWordInfo(wordItem, meaning) {
-    const wordInfo = document.getElementById('word-info');
+function cleanupTemporaryData() {
+    chrome.storage.local.get(null, function (items) {
+        const keysToRemove = Object.keys(items).filter(key =>
+            key === 'lastDeletedWord' || key === 'lastSavedWord' ||
+            (items[key] && typeof items[key] !== 'object')
+        );
 
-    if (wordItem.classList.contains('active')) {
-        wordItem.classList.remove('active');
-        wordInfo.classList.remove('active');
-        setTimeout(() => {
-            wordInfo.style.display = 'none';
-        }, 300);
-    } else {
-        document.querySelectorAll('.word-item.active').forEach(item => {
-            item.classList.remove('active');
-        });
-        wordItem.classList.add('active');
-        wordInfo.innerHTML = DOMPurify.sanitize(marked.parse(meaning));
-        wordInfo.style.display = 'block';
-        setTimeout(() => {
-            wordInfo.classList.add('active');
-        }, 10);
-    }
+        if (keysToRemove.length > 0) {
+            chrome.storage.local.remove(keysToRemove, function () {
+                console.log('Temporary data cleaned up:', keysToRemove);
+            });
+        }
+    });
+}
+
+function toggleWordMeaning(meaningElement) {
+    const allMeanings = document.querySelectorAll('.word-meaning');
+    allMeanings.forEach(el => {
+        if (el !== meaningElement) {
+            el.classList.remove('active');
+        }
+    });
+    meaningElement.classList.toggle('active');
 }
 
 function deleteWord(word) {
     chrome.storage.local.remove(word, function () {
         console.log('단어가 삭제되었습니다:', word);
         showToast(`단어 "${word}"가 삭제되었습니다.`);
-        createWordList();
-        document.getElementById('word-info').style.display = 'none';
-
-        // 최근 삭제된 단어 정보 저장
-        chrome.storage.local.set({ lastDeletedWord: { word: word, time: new Date().getTime() } }, function () {
-            console.log('Last deleted word info stored');
-        });
+        createWordList(); // 목록 새로고침
     });
 }
 
