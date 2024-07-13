@@ -1,0 +1,71 @@
+body {
+    width: 300px;
+    padding: 10px;
+    font-family: Arial, sans-serif;
+}
+
+h1 {
+    font-size: 18px;
+    color: #333;
+}
+
+#word-list {
+    margin-top: 10px;
+}
+
+.word-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    padding: 5px;
+    background-color: #f0f0f0;
+    border-radius: 3px;
+}
+
+.word-text {
+    cursor: pointer;
+}
+
+.word-text:hover {
+    text-decoration: underline;
+}
+
+.delete-btn {
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    padding: 2px 6px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.delete-btn:hover {
+    background-color: #ff3333;
+}
+
+#word-info {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    word-wrap: break-word;
+    line-height: 1.5;
+}
+
+#word-info p {
+    margin: 0 0 10px 0;
+}
+
+#word-info ul,
+#word-info ol {
+    padding-left: 20px;
+    margin: 0 0 10px 0;
+}
+
+#word-info code {
+    background-color: #e0e0e0;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
