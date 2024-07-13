@@ -1,7 +1,35 @@
+/* 기본 스타일 */
 body {
     width: 300px;
     padding: 10px;
     font-family: Arial, sans-serif;
+}
+
+/* 헤더 스타일 */
+.app-header {
+    padding: 10px;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+}
+
+.app-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
+}
+
+.app-title {
+    margin: 0;
+    font-size: 18px;
+    color: #333;
+}
+
+/* 메인 컨텐츠 스타일 */
+main {
+    padding: 15px;
 }
 
 h1 {
@@ -9,6 +37,12 @@ h1 {
     color: #333;
 }
 
+h2 {
+    font-size: 16px;
+    margin-top: 0;
+}
+
+/* 단어 목록 스타일 */
 #word-list {
     margin-top: 10px;
 }
@@ -21,16 +55,18 @@ h1 {
     padding: 5px;
     background-color: #f0f0f0;
     border-radius: 3px;
+    cursor: pointer;
 }
 
-.word-text {
-    cursor: pointer;
+.word-item.active {
+    background-color: #e0e0e0;
 }
 
 .word-text:hover {
     text-decoration: underline;
 }
 
+/* 삭제 버튼 스타일 */
 .delete-btn {
     background-color: #ff4d4d;
     color: white;
@@ -45,27 +81,41 @@ h1 {
     background-color: #ff3333;
 }
 
+/* 단어 정보 스타일 */
 #word-info {
-    margin-top: 15px;
+    background-color: #f0f0f0;
     padding: 10px;
-    background-color: #f9f9f9;
-    border-radius: 5px;
-    word-wrap: break-word;
-    line-height: 1.5;
-}
-
-#word-info p {
-    margin: 0 0 10px 0;
-}
-
-#word-info ul,
-#word-info ol {
-    padding-left: 20px;
-    margin: 0 0 10px 0;
-}
-
-#word-info code {
-    background-color: #e0e0e0;
-    padding: 2px 4px;
     border-radius: 3px;
+    margin-top: 15px;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out, opacity 0.3s ease-out,
+        margin-top 0.3s ease-out;
+    max-height: 0;
+    opacity: 0;
+}
+
+#word-info.active {
+    max-height: 500px;
+    opacity: 1;
+    margin-top: 15px;
+}
+
+/* 토스트 메시지 스타일 */
+.toast-message {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    z-index: 1000;
+}
+
+.toast-message.show {
+    opacity: 1;
 }

@@ -1,22 +1,11 @@
 const API_KEY = 'AIzaSyDOcTqKHLy2WkusecvcvcZ89PQIcVJTFB0'; // 실제 API 키로 교체하세요
 
-console.log('Background script loaded');
-
-self.addEventListener('install', (event) => {
-    console.log('Service Worker installed');
-});
-
-self.addEventListener('activate', (event) => {
-    console.log('Service Worker activated');
-});
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log('Message received in background:', request);
     if (request.action === "SAVE_WORD") {
         getWordInfo(request.word)
             .then(() => {
-                console.log('Word saved successfully');
                 sendResponse({ success: true });
+                notifyWordSaved(request.word);
             })
             .catch((error) => {
                 console.error('Error saving word:', error);
@@ -54,11 +43,23 @@ async function getWordInfo(word) {
         await chrome.storage.local.set({ [word]: { meaning: wordInfo, date: savedDate } });
         console.log('단어 정보가 저장되었습니다:', word);
 
-        // 팝업에 메시지 전송
-        chrome.runtime.sendMessage({ action: "WORD_SAVED", word: word });
-
     } catch (error) {
         console.error('API 요청 중 오류 발생:', error);
         throw error;
     }
+}
+
+function notifyWordSaved(word) {
+    // 콘텐츠 스크립트로 메시지 전송 (변경 없음)
+    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        if (tabs[0]) {
+            chrome.tabs.sendMessage(tabs[0].id, { action: "WORD_SAVED", word: word })
+                .catch(error => console.error('Error sending message to content script:', error));
+        }
+    });
+
+    // 팝업으로 직접 메시지를 보내는 대신 스토리지에 정보 저장
+    chrome.storage.local.set({ lastSavedWord: { word: word, time: new Date().getTime() } }, function () {
+        console.log('Last saved word info stored');
+    });
 }
