@@ -29,7 +29,7 @@ async function getWordInfo(word) {
             body: JSON.stringify({
                 contents: [{
                     parts: [{
-                        text: `"${word}"의 사전적 의미만 간단히 알려주세요. 예문은 제외하고 의미만 알려주세요.`
+                        text: `"${word}"의 뜻을 예문은 제외하고 사전적 의미만 간단히 알려줘. ~입니다와 같은 문장으로 답변하지 말고, 단어의 의미만 알려줘.`
                     }]
                 }]
             })
