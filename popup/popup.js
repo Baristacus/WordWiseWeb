@@ -62,31 +62,36 @@ function toggleWordInfo(wordItem, meaning) {
 function deleteWord(word) {
     chrome.storage.local.remove(word, function () {
         console.log('단어가 삭제되었습니다:', word);
+        showToast(`단어 "${word}"가 삭제되었습니다.`);
         createWordList();
         document.getElementById('word-info').style.display = 'none';
+
+        // 최근 삭제된 단어 정보 저장
+        chrome.storage.local.set({ lastDeletedWord: { word: word, time: new Date().getTime() } }, function () {
+            console.log('Last deleted word info stored');
+        });
     });
 }
 
-function checkLastSavedWord() {
-    chrome.storage.local.get('lastSavedWord', function (result) {
-        if (result.lastSavedWord) {
-            const { word, time } = result.lastSavedWord;
-            const now = new Date().getTime();
-            // 최근 5초 이내에 저장된 단어에 대해서만 토스트 메시지 표시
-            if (now - time < 5000) {
-                showToast(`단어 "${word}"가 저장되었습니다.`);
-                createWordList(); // 단어 목록 새로고침
-            }
-            // 확인 후 lastSavedWord 정보 삭제
+function checkLastWordAction() {
+    chrome.storage.local.get(['lastSavedWord', 'lastDeletedWord'], function (result) {
+        const now = new Date().getTime();
+
+        if (result.lastSavedWord && now - result.lastSavedWord.time < 5000) {
+            showToast(`단어 "${result.lastSavedWord.word}"가 저장되었습니다.`);
             chrome.storage.local.remove('lastSavedWord');
+        } else if (result.lastDeletedWord && now - result.lastDeletedWord.time < 5000) {
+            showToast(`단어 "${result.lastDeletedWord.word}"가 삭제되었습니다.`);
+            chrome.storage.local.remove('lastDeletedWord');
         }
+
+        createWordList(); // 단어 목록 새로고침
     });
 }
 
-// 팝업이 열릴 때마다 최근 저장된 단어 확인
+// 팝업이 열릴 때마다 최근 단어 액션 확인
 document.addEventListener('DOMContentLoaded', function () {
-    createWordList();
-    checkLastSavedWord();
+    checkLastWordAction();
 });
 
 function showToast(message) {
