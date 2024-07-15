@@ -26,7 +26,8 @@ Desktop.ini
 
 # 에디터 디렉토리 및 파일
 .idea/
-.vscode/
+.vscode/*
+!.vscode/settings.json
 *.swp
 *.swo
 
