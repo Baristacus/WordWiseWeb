@@ -1,0 +1,8 @@
+.idea
+.vscode/*
+!.vscode/settings.json
+
+# OS
+.DS_Store
+desktop.ini
+Thumbs.db
