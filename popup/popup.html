@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Word Wise Web</title>
+        <link rel="stylesheet" href="../libs/bootstrap.min.css" />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+        <link rel="stylesheet" href="popup.css" />
+    </head>
+    <body>
+        <div class="container-fluid">
+            <header class="row py-2 mb-3 border-bottom text-primary">
+                <div class="col">
+                    <img src="../images/icon-32.png" alt="Word Wise Web 로고" />
+                    <span class="h5 align-middle fw-bold">Word Wise Web</span>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-light btn-sm" id="userProfileBtn">
+                        <i class="bi bi-person-circle"></i>
+                    </button>
+                    <button class="btn btn-light btn-sm" id="settingsBtn">
+                        <i class="bi bi-gear-fill"></i>
+                    </button>
+                    <button class="btn btn-light btn-sm" id="wordListBtn">
+                        <i class="bi bi-list"></i>
+                    </button>
+                </div>
+            </header>
+
+            <main class="mb-3">
+                <div class="recent-words">
+                    <div id="recentWordsList">
+                        <!-- 최근 저장한 단어들이 여기에 동적으로 추가됩니다 -->
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+                    <button class="btn btn-primary btn-sm" id="addWordBtn">
+                        단어 추가
+                    </button>
+                    <button class="btn btn-primary btn-sm" id="reviewBtn">
+                        복습하기
+                    </button>
+                </div>
+            </main>
+
+            <footer class="row py-2 border-top small">
+                <div class="col">
+                    프리미엄 남은 기간: <span id="premiumDays">0</span>일
+                </div>
+                <div class="col-auto">
+                    저장된 단어 수:
+                    <span id="wordCount" class="fs-6 fw-bold">0</span>개
+                </div>
+            </footer>
+        </div>
+
+        <script src="popup.js"></script>
+        <script src="../libs/bootstrap.bundle.min.js"></script>
+    </body>
+</html>
