@@ -7,7 +7,7 @@
         <link rel="stylesheet" href="../libs/bootstrap.min.css" />
         <link
             rel="stylesheet"
-            href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+            href="../fonts/Bootstrap-icons/bootstrap-icons.min.css" />
         <link rel="stylesheet" href="popup.css" />
     </head>
     <body>
@@ -31,18 +31,32 @@
             </header>
 
             <main class="mb-3">
-                <div class="recent-words">
-                    <div id="recentWordsList">
-                        <!-- 최근 저장한 단어들이 여기에 동적으로 추가됩니다 -->
-                    </div>
+                <div class="input-group mb-3">
+                    <input
+                        type="text"
+                        class="form-control"
+                        placeholder="단어 직접 추가"
+                        aria-label="단어 직접 추가"
+                        aria-describedby="addWordBtn" />
+                    <button
+                        class="btn btn-outline-primary"
+                        type="button"
+                        id="addWordBtn">
+                        추가
+                    </button>
                 </div>
 
-                <div class="quick-actions">
-                    <button class="btn btn-primary btn-sm" id="addWordBtn">
-                        단어 추가
-                    </button>
-                    <button class="btn btn-primary btn-sm" id="reviewBtn">
-                        복습하기
+                <hr />
+
+                <div class="accordion" id="recentWordsAccordion">
+                    <!-- 최근 저장한 단어들이 여기에 동적으로 추가됩니다 -->
+                </div>
+
+                <hr />
+
+                <div class="d-grid">
+                    <button class="btn btn-primary btn-sm" id="learnBtn">
+                        학습하기
                     </button>
                 </div>
             </main>
