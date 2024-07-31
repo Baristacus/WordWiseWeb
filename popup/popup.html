@@ -18,14 +18,17 @@
                     <span class="h5 align-middle fw-bold">Word Wise Web</span>
                 </div>
                 <div class="col-auto">
-                    <button class="btn btn-light btn-sm" id="userProfileBtn">
+                    <button
+                        class="btn btn-light btn-sm"
+                        id="userProfileBtn"
+                        disabled>
                         <i class="bi bi-person-circle"></i>
                     </button>
                     <button class="btn btn-light btn-sm" id="settingsBtn">
                         <i class="bi bi-gear-fill"></i>
                     </button>
-                    <button class="btn btn-light btn-sm" id="wordListBtn">
-                        <i class="bi bi-list"></i>
+                    <button class="btn btn-light btn-sm" id="learnBtn">
+                        <i class="bi bi-book"></i>
                     </button>
                 </div>
             </header>
@@ -49,14 +52,15 @@
                 <hr />
 
                 <div class="accordion" id="recentWordsAccordion">
-                    <!-- 최근 저장한 단어들이 여기에 동적으로 추가됩니다 -->
+                    <!-- 최근 저장한 단어들이 여기에 동적으로 추가 -->
                 </div>
 
                 <hr />
 
                 <div class="d-grid">
-                    <button class="btn btn-primary btn-sm" id="learnBtn">
-                        <i class="bi bi-book"></i> 학습하기
+                    <button class="btn btn-primary" id="wordListBtn">
+                        <i class="bi bi-journal-bookmark-fill"></i> 저장된 단어
+                        전체 보기
                     </button>
                 </div>
             </main>
@@ -72,6 +76,10 @@
             </footer>
         </div>
 
+        <script src="../utils/helpers.js"></script>
+        <script src="../utils/api.js"></script>
+        <script src="../utils/storage.js"></script>
+        <script src="../components/wordItem.js"></script>
         <script src="popup.js"></script>
         <script src="../libs/bootstrap.bundle.min.js"></script>
     </body>
