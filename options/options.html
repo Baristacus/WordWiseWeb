@@ -11,119 +11,150 @@
         <link rel="stylesheet" href="options.css" />
     </head>
     <body>
-        <div class="container-fluid">
-            <div class="row">
-                <!-- 사이드바 -->
-                <nav
-                    id="sidebar"
-                    class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
-                    <div class="position-sticky">
-                        <ul class="nav flex-column">
-                            <li class="nav-item">
-                                <a class="nav-link active" href="#general">
-                                    일반 설정
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="#advanced">
-                                    고급 설정
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="#about"> 정보 </a>
-                            </li>
-                        </ul>
+        <!-- 네비게이션 바 -->
+        <nav class="navbar navbar-expand-lg bg-body-tertiary">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/options/options.html">
+                    <img
+                        src="../images/favicon.png"
+                        alt="Logo"
+                        width="24"
+                        height="24"
+                        class="d-inline-block align-text-top" />
+                    Word Wise Web
+                </a>
+                <button
+                    class="navbar-toggler"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#navbarSupportedContent"
+                    aria-controls="navbarSupportedContent"
+                    aria-expanded="false"
+                    aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div
+                    class="collapse navbar-collapse"
+                    id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#wordList">단어장</a>
+                        </li>
+                        <li class="nav-item ms-2">
+                            <a class="nav-link" href="#learn">학습하기</a>
+                        </li>
+                        <li class="nav-item ms-2">
+                            <a class="nav-link" href="#help">도움말</a>
+                        </li>
+                    </ul>
+
+                    <!-- 오른쪽 정렬 메뉴 -->
+                    <div class="d-flex">
+                        <a class="nav-link mx-2 text-muted" href="#settings"
+                            >환경설정</a
+                        >
+                        <a class="nav-link mx-2 text-muted" href="#about"
+                            >정보</a
+                        >
+                        <a
+                            class="nav-link mx-2 text-muted"
+                            href="#"
+                            target="_blank"
+                            >홈페이지</a
+                        >
                     </div>
-                </nav>
-
-                <!-- 메인 콘텐츠 -->
-                <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                    <div
-                        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                        <h1 class="h2">Word Wise Web 설정</h1>
-                    </div>
-
-                    <!-- 일반 설정 섹션 -->
-                    <section id="general">
-                        <h2>일반 설정</h2>
-                        <div class="mb-3">
-                            <label for="languageSelect" class="form-label"
-                                >선택한 텍스트를 다음 언어로 번역</label
-                            >
-                            <select id="languageSelect" class="form-select">
-                                <option value="ko">한국어</option>
-                                <option value="en">영어</option>
-                                <option value="ja">일본어</option>
-                                <option value="zh">중국어</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="targetLanguageSelect" class="form-label"
-                                >입력 내용을 다음 언어로 번역</label
-                            >
-                            <select
-                                id="targetLanguageSelect"
-                                class="form-select">
-                                <option value="ko">한국어</option>
-                                <option value="en">영어</option>
-                                <option value="ja">일본어</option>
-                                <option value="zh">중국어</option>
-                            </select>
-                        </div>
-                        <div class="mb-3 form-check">
-                            <input
-                                type="checkbox"
-                                class="form-check-input"
-                                id="formalityCheck" />
-                            <label class="form-check-label" for="formalityCheck"
-                                >공식적인 언어 사용</label
-                            >
-                        </div>
-                    </section>
-
-                    <!-- 고급 설정 섹션 -->
-                    <section id="advanced">
-                        <h2>고급 설정</h2>
-                        <div class="mb-3">
-                            <label for="apiKeyInput" class="form-label"
-                                >API 키</label
-                            >
-                            <input
-                                type="text"
-                                class="form-control"
-                                id="apiKeyInput"
-                                placeholder="Gemini API 키를 입력하세요" />
-                        </div>
-                        <div class="mb-3 form-check form-switch">
-                            <input
-                                class="form-check-input"
-                                type="checkbox"
-                                id="autoSaveSwitch" />
-                            <label class="form-check-label" for="autoSaveSwitch"
-                                >자동 저장 활성화</label
-                            >
-                        </div>
-                        <div class="mb-3 form-check form-switch">
-                            <input
-                                class="form-check-input"
-                                type="checkbox"
-                                id="darkModeSwitch" />
-                            <label class="form-check-label" for="darkModeSwitch"
-                                >다크 모드</label
-                            >
-                        </div>
-                    </section>
-
-                    <!-- 정보 섹션 -->
-                    <section id="about">
-                        <h2>정보</h2>
-                        <p>Word Wise Web 버전: 1.0.0</p>
-                        <p>개발자: Your Name</p>
-                        <p>이메일: your.email@example.com</p>
-                    </section>
-                </main>
+                </div>
             </div>
-        </div>
+        </nav>
+
+        <!-- 컨텐츠 -->
+        <main class="container pt-3">
+            <!-- 단어장 섹션 -->
+            <section id="wordList">
+                <h1>Word Wise Web 단어장</h1>
+                <hr />
+            </section>
+
+            <!-- 학습하기 섹션 -->
+            <section id="learn">
+                <h1>Word Wise Web 학습하기</h1>
+                <hr />
+            </section>
+
+            <!-- 도움말 섹션 -->
+            <section id="help">
+                <h1>Word Wise Web 도움말</h1>
+                <hr />
+            </section>
+
+            <!-- 일반 설정 섹션 -->
+            <section id="settings">
+                <h1>Word Wise Web 설정</h1>
+                <hr />
+
+                <h2>일반 설정</h2>
+                <div class="mb-5">
+                    <div class="mb-3 form-check form-switch">
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="floatingIconSwitch" />
+                        <label class="form-check-label" for="floatingIconSwitch"
+                            >플로팅 아이콘 표시</label
+                        >
+                    </div>
+                    <div class="mb-3 form-check form-switch">
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="highlightSwitch" />
+                        <label class="form-check-label" for="highlightSwitch"
+                            >하이라이트 기능</label
+                        >
+                    </div>
+                    <div class="mb-3 form-check form-switch">
+                        <input
+                            class="form-check-input"
+                            type="checkbox"
+                            id="autoSaveSwitch" />
+                        <label class="form-check-label" for="autoSaveSwitch"
+                            >자동 저장</label
+                        >
+                    </div>
+                </div>
+
+                <h2>고급 설정</h2>
+                <div class="mb-5"></div>
+
+                <h2>API 키 설정</h2>
+                <div class="input-group mb-3">
+                    <span class="input-group-text" id="apiKeyInput"
+                        >API Key</span
+                    >
+                    <input
+                        type="text"
+                        class="form-control"
+                        aria-label="Google Gemini API Key 입력"
+                        aria-describedby="apiKeyInput"
+                        placeholder="Google Gemini API Key 입력" />
+                    <button
+                        class="btn btn-primary"
+                        type="button"
+                        id="apiKeySaveBtn">
+                        저장
+                    </button>
+                </div>
+            </section>
+
+            <!-- 정보 섹션 -->
+            <section id="about">
+                <h2>정보</h2>
+                <hr />
+                <p>Word Wise Web Extension 버전: 0.0.1</p>
+                <p>개발자: Baristacus, Koho</p>
+                <p>이메일: baristacus@wiseit.kr, koho@wiseit.kr</p>
+            </section>
+        </main>
 
         <script src="options.js"></script>
         <script src="../libs/bootstrap.bundle.min.js"></script>
