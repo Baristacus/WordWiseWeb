@@ -98,7 +98,8 @@
                         <input
                             class="form-check-input"
                             type="checkbox"
-                            id="floatingIconSwitch" />
+                            id="floatingIconSwitch"
+                            checked />
                         <label class="form-check-label" for="floatingIconSwitch"
                             >플로팅 아이콘 표시</label
                         >
@@ -109,7 +110,7 @@
                             type="checkbox"
                             id="highlightSwitch" />
                         <label class="form-check-label" for="highlightSwitch"
-                            >하이라이트 기능</label
+                            >저장한 단어 형광펜으로 표시</label
                         >
                     </div>
                     <div class="mb-3 form-check form-switch">
@@ -118,31 +119,30 @@
                             type="checkbox"
                             id="autoSaveSwitch" />
                         <label class="form-check-label" for="autoSaveSwitch"
-                            >자동 저장</label
+                            >단어 선택시 자동 저장</label
                         >
                     </div>
                 </div>
 
                 <h2>고급 설정</h2>
-                <div class="mb-5"></div>
-
-                <h2>API 키 설정</h2>
-                <div class="input-group mb-3">
-                    <span class="input-group-text" id="apiKeyInput"
-                        >API Key</span
-                    >
-                    <input
-                        type="text"
-                        class="form-control"
-                        aria-label="Google Gemini API Key 입력"
-                        aria-describedby="apiKeyInput"
-                        placeholder="Google Gemini API Key 입력" />
-                    <button
-                        class="btn btn-primary"
-                        type="button"
-                        id="apiKeySaveBtn">
-                        저장
-                    </button>
+                <div class="mb-5">
+                    <div class="input-group">
+                        <span class="input-group-text" id="apiKeyInput"
+                            >Google API Key</span
+                        >
+                        <input
+                            type="text"
+                            class="form-control"
+                            aria-label="Google Gemini API Key 입력"
+                            aria-describedby="apiKeyInput"
+                            placeholder="Google Gemini API Key 입력" />
+                        <button
+                            class="btn btn-primary"
+                            type="button"
+                            id="apiKeySaveBtn">
+                            저장
+                        </button>
+                    </div>
                 </div>
             </section>
 
