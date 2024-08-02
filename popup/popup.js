@@ -55,6 +55,19 @@ async function handleSaveWord(word) {
     }
 }
 
+// 단어 삭제 처리 함수
+async function handleDeleteWord(wordToDelete) {
+    try {
+        await deleteWord(wordToDelete);
+        await displayRecentWords();
+        await displayWordCount();
+        alert('단어가 성공적으로 삭제되었습니다!');
+    } catch (error) {
+        console.error('단어 삭제 중 오류 발생:', error);
+        alert('단어 삭제 중 오류가 발생했습니다.');
+    }
+}
+
 // 이벤트 리스너 등록
 userProfileBtn.addEventListener('click', () => {
     chrome.tabs.create({ url: 'options/options.html#profile' });
