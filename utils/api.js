@@ -1,6 +1,6 @@
-// Gemini API 키 
-const API_KEY = 'MY_API_KEY';
-const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+// Gemini API 키
+const API_KEY = 'YOUR_API_KEY';
+const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
 
 
 // Gemini API를 사용하여 단어 정의 가져오기
@@ -19,7 +19,7 @@ async function callGeminiAPI(word, context) {
         정의: (추론된 정의)
         예문: (작성된 예문)
 
-        반드시 응답 형식을 지켜서 답변해야해.
+        반드시 응답 형식을 지켜서 답변하고, ~다., ~것., ~이다. 등의 문장으로 끝나도록 해줘.
     `;
 
     try {
@@ -70,7 +70,7 @@ async function callGeminiAPI(word, context) {
         return { definition, example };
     } catch (error) {
         console.error('Gemini API 호출 오류:', error);
-    throw error;
+        throw error;
     }
 };
 
