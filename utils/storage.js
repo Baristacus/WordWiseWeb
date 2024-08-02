@@ -16,7 +16,7 @@ window.saveWord = function (word, definition, example) {
             const isDuplicate = recentWords.some(item => item.term === word);
             if (!isDuplicate) {
                 recentWords.unshift(newWord);
-                if (recentWords.length > 5) recentWords.pop();
+                if (recentWords.length > 3) recentWords.pop();
                 wordCount++;
 
                 chrome.storage.sync.set({ recentWords, wordCount }, function () {

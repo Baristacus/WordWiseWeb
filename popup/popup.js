@@ -21,7 +21,7 @@ async function displayRecentWords() {
         emptyStateMessage.textContent = '저장된 단어가 없습니다.';
         recentWordsAccordion.appendChild(emptyStateMessage);
     } else {
-        recentWords.forEach((word, index) => {
+        recentWords.slice(0, 3).forEach((word, index) => {
             const wordItem = createWordItem(word, index);
             recentWordsAccordion.appendChild(wordItem);
         });
