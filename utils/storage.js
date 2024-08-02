@@ -29,6 +29,28 @@ window.saveWord = function (word, definition, example) {
     });
 };
 
+// 단어 삭제 함수
+window.deleteWord = function (wordToDelete) {
+    return new Promise((resolve, reject) => {
+        chrome.storage.sync.get(['recentWords', 'wordCount'], function (result) {
+            let recentWords = result.recentWords || [];
+            let wordCount = result.wordCount || 0;
+
+            const index = recentWords.findIndex(word => word.term === wordToDelete);
+            if (index !== -1) {
+                recentWords.splice(index, 1);
+                wordCount = Math.max(0, wordCount - 1);
+
+                chrome.storage.sync.set({ recentWords, wordCount }, function () {
+                    resolve();
+                });
+            } else {
+                reject(new Error('삭제할 단어를 찾을 수 없습니다.'));
+            }
+        });
+    });
+};
+
 // 최근 저장한 단어 목록 가져오기
 window.getRecentWords = function () {
     return new Promise((resolve) => {
