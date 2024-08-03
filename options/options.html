@@ -57,7 +57,7 @@
                             >정보</a
                         >
                         <a
-                            class="nav-link mx-2 text-muted"
+                            class="nav-link mx-2 text-muted disabled"
                             href="#"
                             target="_blank"
                             >홈페이지</a
@@ -108,19 +108,24 @@
                         <input
                             class="form-check-input"
                             type="checkbox"
-                            id="highlightSwitch" />
-                        <label class="form-check-label" for="highlightSwitch"
-                            >저장한 단어 형광펜으로 표시</label
+                            id="saveExampleSwitch" />
+                        <label class="form-check-label" for="saveExampleSwitch"
+                            >단어와 함께 예문도 함께 저장</label
                         >
                     </div>
                     <div class="mb-3 form-check form-switch">
                         <input
                             class="form-check-input"
                             type="checkbox"
-                            id="autoSaveSwitch" />
-                        <label class="form-check-label" for="autoSaveSwitch"
-                            >단어 선택시 자동 저장</label
+                            id="highlightSwitch" />
+                        <label class="form-check-label" for="highlightSwitch"
+                            >저장한 단어 형광펜으로 표시</label
                         >
+                    </div>
+                    <div class="d-grid">
+                        <button id="saveSettingsBtn" class="btn btn-success">
+                            설정 저장
+                        </button>
                     </div>
                 </div>
 

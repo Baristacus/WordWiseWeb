@@ -1,11 +1,15 @@
 // DOM 요소 선택
 const apiKeyInput = document.getElementById('apiKeyInput');
 const apiKeySaveBtn = document.getElementById('apiKeySaveBtn');
+const floatingIconSwitch = document.getElementById('floatingIconSwitch');
+const saveExampleSwitch = document.getElementById('saveExampleSwitch');
+const highlightSwitch = document.getElementById('highlightSwitch');
+const saveSettingsBtn = document.getElementById('saveSettingsBtn');
 
 // API 키 저장 함수
 function saveApiKey(apiKey) {
     chrome.storage.sync.set({ apiKey }, () => {
-        apiKeyInput.value = `${apiKey.slice(0, 5)}...`;
+        apiKeyInput.value = `${apiKey.slice(0, 5)}*****`;
         apiKeyInput.disabled = true;
         apiKeySaveBtn.textContent = '저장됨';
         apiKeySaveBtn.classList.remove('btn-primary');
@@ -48,7 +52,7 @@ chrome.storage.sync.get(['apiKey'], result => {
 
 // API 키 저장 상태 표시 함수
 function displaySavedState(apiKey) {
-    apiKeyInput.value = `${apiKey.slice(0, 5)}...`;
+    apiKeyInput.value = `${apiKey.slice(0, 5)}*****`;
     apiKeyInput.disabled = true;
     apiKeySaveBtn.textContent = '저장됨';
     apiKeySaveBtn.classList.remove('btn-primary');
@@ -114,8 +118,23 @@ function setupResetButtonListeners() {
 }
 
 // 설정 저장 함수
+function saveSettings() {
+    const floatingIcon = floatingIconSwitch.checked;
+    const saveExample = saveExampleSwitch.checked;
+    const highlight = highlightSwitch.checked;
+    chrome.storage.sync.set({ floatingIcon, saveExample, highlight }, () => {
+        alert('설정이 저장되었습니다.');
+    });
+}
 
 // 저장된 설정 불러오기 함수
+function loadSettings() {
+    chrome.storage.sync.get(['floatingIcon', 'saveExample', 'highlight'], result => {
+        if (result.floatingIcon) floatingIconSwitch.checked = result.floatingIcon;
+        if (result.saveExample) saveExampleSwitch.checked = result.saveExample;
+        if (result.highlight) highlightSwitch.checked = result.highlight;
+    });
+}
 
 // 이벤트 리스너 등록
 apiKeySaveBtn.addEventListener('click', () => {
@@ -124,6 +143,8 @@ apiKeySaveBtn.addEventListener('click', () => {
         saveApiKey(apiKey);
     }
 });
+
+saveSettingsBtn.addEventListener('click', saveSettings);
 
 // 네비게이션 기능
 document.querySelectorAll('.nav-link').forEach(link => {
@@ -143,3 +164,6 @@ document.querySelector('main section').style.display = 'block';
 document.querySelectorAll('main section').forEach((section, index) => {
     if (index > 0) section.style.display = 'none';
 });
+
+// 페이지 로드 시 설정 불러오기
+document.addEventListener('DOMContentLoaded', loadSettings);
