@@ -1,8 +1,15 @@
 @import url("../fonts/Pretendard/pretendardvariable.css");
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap");
 
 * {
     font-family: "Pretendard Variable", Pretendard, -apple-system,
         BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI",
         "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic",
         "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+}
+
+.engFont {
+    font-family: "Montserrat", sans-serif;
+    font-weight: 600;
+    font-style: normal;
 }
