@@ -5,7 +5,8 @@
 // 데이터 동기화: 클라우드 저장소와의 동기화 관리
 // 백그라운드 학습 알고리즘 실행: 주기적인 복습 알고리즘 실행
 // 오프라인 모드 관리: 네트워크 상태 모니터링 및 오프라인 모드 전환
-
+import { callGeminiAPI } from '../utils/api.js';
+import { saveWord } from '../utils/storage.js';
 
 // content.js로부터 메시지를 받아 처리
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
