@@ -1,6 +1,7 @@
 // 전역 변수
 let selectedText = '';
 let selectedContext = '';
+let isSelecting = false;
 
 // 플로팅 아이콘 생성
 const floatingIcon = document.createElement('div');
@@ -18,23 +19,45 @@ floatingIcon.style.cssText = `
 document.body.appendChild(floatingIcon);
 
 // 텍스트 선택 이벤트 리스너
+document.addEventListener('mouseup', handleTextSelection);
 document.addEventListener('selectionchange', handleTextSelection);
 
-// 텍스트 선택 처리 함수
-function handleTextSelection() {
-    const selection = window.getSelection();
-    selectedText = selection.toString().trim();
+// 마우스 이벤트 리스너 추가
+document.addEventListener('mousedown', () => {
+    isSelecting = true;
+    console.log('마우스 다운: 선택 시작');
+});
+document.addEventListener('mouseup', () => {
+    setTimeout(() => {
+        isSelecting = false;
+        console.log('마우스 업: 선택 종료');
+    }, 10);
+});
 
-    if (selectedText.length > 0 && selectedText.split(/\s+/).length <= 3) {
-        const range = selection.getRangeAt(0);
-        selectedContext = getTextContext(range, 500);
-        const rect = range.getBoundingClientRect();
-        showFloatingIcon(rect.left + window.scrollX, rect.top + window.scrollY);
-        console.log('선택된 텍스트:', selectedText);
-        console.log('문맥:', selectedContext);
-    } else {
-        hideFloatingIcon();
-    }
+// 텍스트 선택 처리 함수
+function handleTextSelection(event) {
+    console.log('텍스트 선택 이벤트 발생');
+    setTimeout(() => {
+        const selection = window.getSelection();
+        const newSelectedText = selection.toString().trim();
+
+        console.log('현재 선택된 텍스트:', newSelectedText);
+
+        if (newSelectedText.length > 0 && newSelectedText.split(/\s+/).length <= 3) {
+            selectedText = newSelectedText;
+            const range = selection.getRangeAt(0);
+            selectedContext = getTextContext(range, 100);
+            const rect = range.getBoundingClientRect();
+            showFloatingIcon(rect.left + window.scrollX, rect.top + window.scrollY);
+            console.log('선택된 텍스트 업데이트:', selectedText);
+            console.log('문맥:', selectedContext);
+        } else if (!isSelecting && event.type === 'mouseup' && event.target !== floatingIcon) {
+            hideFloatingIcon();
+            selectedText = '';
+            selectedContext = '';
+            console.log('선택 해제: 텍스트와 문맥 초기화');
+        }
+    }, 10); // 약간의 지연을 두어 선택이 완료된 후 처리
 }
 
 // 플로팅 아이콘 표시 함수
@@ -44,11 +67,13 @@ function showFloatingIcon(x, y) {
     floatingIcon.style.left = `${Math.max(x - iconSize - margin, margin)}px`;
     floatingIcon.style.top = `${Math.max(y - iconSize - margin, margin)}px`;
     floatingIcon.style.display = 'block';
+    console.log('플로팅 아이콘 표시됨');
 }
 
 // 플로팅 아이콘 숨김 함수
 function hideFloatingIcon() {
     floatingIcon.style.display = 'none';
+    console.log('플로팅 아이콘 숨겨짐');
 }
 
 // 선택된 텍스트의 주변 문맥을 가져오는 함수
@@ -72,24 +97,36 @@ async function handleIconClick() {
     if (selectedText && selectedText.length > 0) {
         try {
             console.log('Gemini API 호출 시작');
-            const response = await new Promise((resolve) => {
+            const response = await new Promise((resolve, reject) => {
                 chrome.runtime.sendMessage({
                     action: 'getDefinition',
                     word: selectedText,
                     context: selectedContext
-                }, resolve);
+                }, response => {
+                    if (chrome.runtime.lastError) {
+                        reject(new Error(chrome.runtime.lastError.message));
+                    } else {
+                        resolve(response);
+                    }
+                });
             });
             console.log('Gemini API 응답:', response);
 
             if (response && response.success) {
                 console.log('단어 저장 시작');
-                const saveResponse = await new Promise((resolve) => {
+                const saveResponse = await new Promise((resolve, reject) => {
                     chrome.runtime.sendMessage({
                         action: 'saveWord',
                         word: response.word,
                         definition: response.definition,
                         example: response.example
-                    }, resolve);
+                    }, response => {
+                        if (chrome.runtime.lastError) {
+                            reject(new Error(chrome.runtime.lastError.message));
+                        } else {
+                            resolve(response);
+                        }
+                    });
                 });
                 console.log('단어 저장 응답:', saveResponse);
 
@@ -115,10 +152,13 @@ async function handleIconClick() {
     hideFloatingIcon();
 }
 
-// 문서 클릭 이벤트 리스너 추가
+// 문서 클릭 이벤트 리스너 수정
 document.addEventListener('click', (event) => {
     if (event.target !== floatingIcon) {
+        console.log('문서 클릭: 플로팅 아이콘 외 영역');
         hideFloatingIcon();
+        selectedText = '';
+        selectedContext = '';
     }
 });
 
