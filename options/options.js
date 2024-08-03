@@ -15,26 +15,103 @@ function saveApiKey(apiKey) {
 
 // API 키가 저장되어 있는지 확인하고 키 일부만 표시
 chrome.storage.sync.get(['apiKey'], result => {
-    if (result.apiKey) {
-        apiKeyInput.value = `${result.apiKey.slice(0, 5)}...`;
-        apiKeyInput.disabled = true;
-        apiKeySaveBtn.textContent = '저장됨';
-        apiKeySaveBtn.classList.remove('btn-primary');
-        apiKeySaveBtn.classList.add('btn-success');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const apiKeySaveBtn = document.getElementById('apiKeySaveBtn');
 
-        // 재설정 버튼 클릭 시 API 키 초기화 후 입력 필드 활성화
-        apiKeySaveBtn.addEventListener('click', () => {
-            chrome.storage.sync.remove('apiKey', () => {
-                apiKeyInput.value = '';
-                apiKeyInput.disabled = false;
-                apiKeySaveBtn.textContent = '저장';
-                apiKeySaveBtn.classList.remove('btn-danger');
-                apiKeySaveBtn.classList.add('btn-primary');
-                apiKeyInput.focus();
-            })
+    if (result.apiKey) {
+        // API 키가 저장되어 있는 경우
+        displaySavedState(result.apiKey);
+
+        // 마우스 오버/아웃 이벤트 리스너 추가
+        apiKeySaveBtn.addEventListener("mouseover", () => {
+            apiKeySaveBtn.textContent = '재설정';
+            apiKeySaveBtn.classList.remove('btn-success');
+            apiKeySaveBtn.classList.add('btn-danger');
         });
+
+        apiKeySaveBtn.addEventListener("mouseout", () => {
+            apiKeySaveBtn.textContent = '저장됨';
+            apiKeySaveBtn.classList.remove('btn-danger');
+            apiKeySaveBtn.classList.add('btn-success');
+        });
+
+        // 재설정 버튼 클릭 이벤트 리스너
+        apiKeySaveBtn.addEventListener('click', resetApiKey);
+    } else {
+        // API 키가 저장되어 있지 않은 경우
+        displayUnsavedState();
+
+        // 저장 버튼 클릭 이벤트 리스너
+        apiKeySaveBtn.addEventListener('click', saveApiKey);
     }
 });
+
+// API 키 저장 상태 표시 함수
+function displaySavedState(apiKey) {
+    apiKeyInput.value = `${apiKey.slice(0, 5)}...`;
+    apiKeyInput.disabled = true;
+    apiKeySaveBtn.textContent = '저장됨';
+    apiKeySaveBtn.classList.remove('btn-primary');
+    apiKeySaveBtn.classList.add('btn-success');
+}
+
+// API 키 미저장 상태 표시 함수
+function displayUnsavedState() {
+    apiKeyInput.value = '';
+    apiKeyInput.disabled = false;
+    apiKeySaveBtn.textContent = '저장';
+    apiKeySaveBtn.classList.remove('btn-success', 'btn-danger');
+    apiKeySaveBtn.classList.add('btn-primary');
+}
+
+// API 키 저장 함수
+function saveApiKey() {
+    const apiKey = apiKeyInput.value.trim();
+    if (apiKey) {
+        chrome.storage.sync.set({ apiKey }, () => {
+            displaySavedState(apiKey);
+            setupResetButtonListeners();
+        });
+    }
+}
+
+// API 키 재설정 함수
+function resetApiKey() {
+    chrome.storage.sync.remove('apiKey', () => {
+        displayUnsavedState();
+        apiKeyInput.focus();
+
+        // 이벤트 리스너 제거
+        apiKeySaveBtn.removeEventListener("mouseover", onMouseOver);
+        apiKeySaveBtn.removeEventListener("mouseout", onMouseOut);
+        apiKeySaveBtn.removeEventListener('click', resetApiKey);
+
+        // 저장 버튼 클릭 이벤트 리스너 추가
+        apiKeySaveBtn.addEventListener('click', saveApiKey);
+    });
+}
+
+// 마우스 오버 이벤트 핸들러
+function onMouseOver() {
+    apiKeySaveBtn.textContent = '재설정';
+    apiKeySaveBtn.classList.remove('btn-success');
+    apiKeySaveBtn.classList.add('btn-danger');
+}
+
+// 마우스 아웃 이벤트 핸들러
+function onMouseOut() {
+    apiKeySaveBtn.textContent = '저장됨';
+    apiKeySaveBtn.classList.remove('btn-danger');
+    apiKeySaveBtn.classList.add('btn-success');
+}
+
+// 재설정 버튼 이벤트 리스너 설정 함수
+function setupResetButtonListeners() {
+    apiKeySaveBtn.addEventListener("mouseover", onMouseOver);
+    apiKeySaveBtn.addEventListener("mouseout", onMouseOut);
+    apiKeySaveBtn.removeEventListener('click', saveApiKey);
+    apiKeySaveBtn.addEventListener('click', resetApiKey);
+}
 
 // 설정 저장 함수
 
