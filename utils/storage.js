@@ -13,18 +13,19 @@ window.saveWord = function (word, definition, example) {
             };
 
             // 중복 검사
-            const isDuplicate = recentWords.some(item => item.term === word);
-            if (!isDuplicate) {
-                recentWords.unshift(newWord);
-                if (recentWords.length > 3) recentWords.pop();
-                wordCount++;
-
-                chrome.storage.sync.set({ recentWords, wordCount }, function () {
-                    resolve({ recentWords, wordCount });
-                });
+            const existingIndex = recentWords.findIndex(item => item.term === word);
+            if (existingIndex !== -1) {
+                // 이미 존재하는 단어라면 업데이트
+                recentWords[existingIndex] = newWord;
             } else {
-                reject(new Error('이미 저장된 단어입니다.'));
+                // 새로운 단어라면 배열 앞에 추가
+                recentWords.unshift(newWord);
+                wordCount++;
             }
+
+            chrome.storage.sync.set({ recentWords, wordCount }, function () {
+                resolve({ recentWords, wordCount });
+            });
         });
     });
 };
@@ -42,7 +43,7 @@ window.deleteWord = function (wordToDelete) {
                 wordCount = Math.max(0, wordCount - 1);
 
                 chrome.storage.sync.set({ recentWords, wordCount }, function () {
-                    resolve();
+                    resolve({ recentWords, wordCount });
                 });
             } else {
                 reject(new Error('삭제할 단어를 찾을 수 없습니다.'));
@@ -55,7 +56,11 @@ window.deleteWord = function (wordToDelete) {
 window.getRecentWords = function () {
     return new Promise((resolve) => {
         chrome.storage.sync.get(['recentWords'], function (result) {
-            resolve(result.recentWords || []);
+            let recentWords = result.recentWords || [];
+            // 날짜순으로 정렬 (최신순)
+            recentWords.sort((a, b) => new Date(b.addedDate) - new Date(a.addedDate));
+            console.log('getRecentWords 함수 내부 - 정렬된 단어 목록:', recentWords); // 디버깅용 로그
+            resolve(recentWords);
         });
     });
 };
@@ -63,8 +68,10 @@ window.getRecentWords = function () {
 // 저장된 단어 수 가져오기
 window.getWordCount = function () {
     return new Promise((resolve) => {
-        chrome.storage.sync.get(['wordCount'], function (result) {
-            resolve(result.wordCount || 0);
+        chrome.storage.sync.get(['recentWords'], function (result) {
+            let recentWords = result.recentWords || [];
+            console.log('getWordCount 함수 내부 - 단어 목록:', recentWords); // 디버깅용 로그
+            resolve(recentWords.length);
         });
     });
 };

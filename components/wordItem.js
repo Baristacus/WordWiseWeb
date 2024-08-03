@@ -13,31 +13,22 @@ window.createWordItem = function (word, index) {
     accordionItem.className = 'accordion-item';
 
     accordionItem.innerHTML = `
-        <h2 class="accordion-header d-flex align-items-center" id="heading${index}">
-            <button class="accordion-button collapsed flex-grow-1" type="button" data-bs-toggle="collapse" 
+        <h2 class="accordion-header" id="heading${index}">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
                     data-bs-target="#collapse${index}" aria-expanded="false" 
                     aria-controls="collapse${index}">
                 ${word.term} 
                 <small class="text-muted ms-2">(${formatDate(word.addedDate)})</small>
-            </button>
-            <button class="btn btn-link text-danger delete-word" data-word="${word.term}">
-                <i class="bi bi-trash"></i>
             </button>
         </h2>
         <div id="collapse${index}" class="accordion-collapse collapse" aria-labelledby="heading${index}" data-bs-parent="#recentWordsAccordion">
             <div class="accordion-body">
                 <p><strong>의미:</strong> ${word.definition}</p>
                 <p><strong>예문:</strong> ${word.example}</p>
+                <button class="btn btn-sm btn-danger delete-word-btn" data-word="${word.term}">삭제</button>
             </div>
         </div>
     `;
-
-    // 삭제 버튼에 이벤트 리스너 추가
-    const deleteBtn = accordionItem.querySelector('.delete-word');
-    deleteBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // 아코디언 토글 방지
-        handleDeleteWord(word.term);
-    });
 
     return accordionItem;
 };
