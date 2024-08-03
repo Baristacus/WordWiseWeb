@@ -10,29 +10,42 @@
 // content.js로부터 메시지를 받아 처리
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'getDefinition') {
-        // api.js의 callGeminiAPI 함수 호출
-        callGeminiAPI(request.word, request.context)
-            .then(result => {
-                // 결과를 content.js로 전송
-                chrome.tabs.sendMessage(sender.tab.id, {
-                    action: 'definitionResult',
-                    word: request.word,
-                    definition: result.definition,
-                    example: result.example
-                });
-            })
-            .catch(error => {
-                console.error('API 호출 오류:', error);
-            });
+        getDefinition(request.word, request.context)
+            .then(result => sendResponse({
+                success: true,
+                word: request.word,
+                definition: result.definition,
+                example: result.example
+            }))
+            .catch(error => sendResponse({
+                success: false,
+                error: error.message
+            }));
+
+        return true; // 비동기 응답을 위해 true 반환
     } else if (request.action === 'saveWord') {
-        // storage.js의 saveWord 함수 호출
-        saveWord(request.word, request.definition, request.example)
-            .then(() => {
-                console.log('단어 저장 완료');
-            })
-            .catch(error => {
-                console.error('단어 저장 오류:', error);
-            });
+        handleSaveWord(request.word, request.definition, request.example)
+            .then(result => sendResponse({ success: true }))
+            .catch(error => sendResponse({ success: false, error: error.message }));
+
+        return true; // 비동기 응답을 위해 true 반환
     }
-    return true; // 비동기 응답을 위해 true 반환
 });
+
+async function getDefinition(word, context) {
+    try {
+        const { definition, example } = await callGeminiAPI(word, context);
+
+        return { definition, example }
+    } catch (error) {
+        throw error;
+    }
+}
+
+async function handleSaveWord(word, definition, example) {
+    try {
+        await saveWord(word, definition, example);
+    } catch {
+        throw error;
+    }
+}
