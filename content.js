@@ -13,6 +13,11 @@ bootstrapIconsCSS.rel = 'stylesheet';
 bootstrapIconsCSS.href = 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.4.1/font/bootstrap-icons.min.css';
 document.head.appendChild(bootstrapIconsCSS);
 
+// worditem.js 파일 포함
+const wordItemScript = document.createElement('script');
+wordItemScript.src = chrome.runtime.getURL('worditem.js');
+document.head.appendChild(wordItemScript);
+
 // 플로팅 아이콘 요소 생성 및 스타일 적용
 const floatingIcon = document.createElement('div');
 floatingIcon.id = 'word-wise-web-floating-icon';
@@ -163,14 +168,24 @@ function handleIconClick() {
     if (selectedText.length > 0) {
         console.log('context:', selectedContext); // 디버깅용 콘솔 로그 추가
 
-        // 플로팅 팝업 생성 및 API 호출
-        createFloatingPopup(selectedText, "정의를 불러오는 중...", "예문을 불러오는 중...");
-        
+        definition = '';
+        example = '';
         chrome.runtime.sendMessage({
             action: 'getDefinition',
             word: selectedText,
             context: selectedContext
+        }, response => {
+            if (response.success) {
+                definition = response.definition;
+                example = response.example;
+                console.log(definition)
+            } else {
+                console.error('Gemini에게서 값을 가져오지 못했습니다.:', response.error);
+            }
         });
+        // 플로팅 팝업 생성 및 API 호출
+        createFloatingPopup(selectedText, definition, example);
+            
     }
     hideFloatingIcon();
 }
