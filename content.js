@@ -65,13 +65,28 @@ function hideFloatingIcon() {
 // 플로팅 아이콘 클릭 이벤트 처리
 floatingIcon.addEventListener('click', handleIconClick);
 
-// 아이콘 클릭 처리 함수
-function handleIconClick() {
+async function handleIconClick() {
+    // 선택된 텍스트를 가져옴
     const selectedText = window.getSelection().toString().trim();
     if (selectedText.length > 0) {
-        // TODO: 선택된 단어 처리 로직 구현
-        console.log('선택된 단어:', selectedText);
-        // 여기에 단어 저장 또는 팝업 표시 등의 로직을 추가할 수 있습니다.
+        try {
+            // 문맥을 가져옴
+            const context = window.getSelection().anchorNode.textContent; // 현재 문맥을 가져옴
+            console.log('context:', context); // 디버깅용 콘솔 로그 추가
+            // API 호출
+            const { definition, example } = await callGeminiAPI(selectedText, context); // 정의와 예문을 가져옴
+            console.log('정의:', definition);
+            console.log('예문:', example);
+
+            // 단어 저장
+            window.saveWord(selectedText, definition, example).then(() => {
+                console.log('단어가 저장되었습니다:', selectedText);
+            }).catch(error => {
+                console.error('단어 저장 중 오류 발생:', error);
+            });
+        } catch (error) {
+            console.error('단어 처리에 실패했습니다:', error);
+        }
     }
     hideFloatingIcon();
 }
