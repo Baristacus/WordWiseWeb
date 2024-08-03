@@ -1,3 +1,7 @@
+// 선택된 텍스트와 문맥을 저장할 변수
+let selectedText = '';
+let selectedContext = '';
+
 // 플로팅 아이콘 요소 생성 및 스타일 적용
 const floatingIcon = document.createElement('div');
 floatingIcon.id = 'word-wise-web-floating-icon';
@@ -18,7 +22,7 @@ document.addEventListener('mouseup', handleTextSelection);
 // 텍스트 선택 처리 함수
 function handleTextSelection(event) {
     setTimeout(() => {
-        const selectedText = window.getSelection().toString().trim();
+        selectedText = window.getSelection().toString().trim();
 
         if (selectedText.length > 0 && selectedText.split(/\s+/).length <= 3) {
             // 선택된 텍스트가 있고, 3단어 이하인 경우에만 플로팅 아이콘 표시
@@ -59,11 +63,37 @@ floatingIcon.addEventListener('click', handleIconClick);
 
 // 아이콘 클릭 처리 함수
 function handleIconClick() {
-    const selectedText = window.getSelection().toString().trim();
-    if (selectedText.length > 0) {
-        // TODO: 선택된 단어 처리 로직 구현
-        console.log('선택된 단어:', selectedText);
-        // 여기에 단어 저장 또는 팝업 표시 등의 로직을 추가할 수 있습니다.
+    if (selectedText) {
+        word = selectedText;
+        definition = '';
+        example = '';
+
+        chrome.runtime.sendMessage({
+            action: 'getDefinition',
+            word: word,
+            context: selectedContext
+        }, response => {
+            if (response.success) {
+                definition = response.definition;
+                example = response.example;
+                console.log('단어 의미와 예문 받아옴');
+            } else {
+                console.error('단어 의미와 예문 받아오는 중 오류 발생: ', response.error)
+            }
+        });
+
+        chrome.runtime.sendMessage({
+            action: 'saveWord',
+            word: word,
+            definition: definition,
+            example: example
+        }, response => {
+            if (response.success) {
+                console.log('단어를 저장함');
+            } else {
+                console.error('단어 저장 실패');
+            }
+        });
     }
     hideFloatingIcon();
 }
