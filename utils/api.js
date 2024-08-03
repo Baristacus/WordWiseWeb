@@ -11,7 +11,7 @@ chrome.storage.sync.get(['apiKey'], result => {
 });
 
 
-// Gemini API를 사용하여 단어 정의 가져오기
+// Gemini API를 사용하여 단어 의미 가져오기
 window.callGeminiAPI = async function(word, context) {
 // async function callGeminiAPI(word, context) {    // js 테스트용 코드
     if (!API_KEY) {
@@ -19,19 +19,25 @@ window.callGeminiAPI = async function(word, context) {
     }
 
     const prompt = `
-        너는 백과사전이야. 아래의 텍스트와 텍스트가 포함된 문맥을 보고 텍스트의 정의와 예문을 알려줘야해.
+        너는 백과사전이야. 아래의 텍스트와 텍스트가 포함된 문맥을 보고 텍스트의 사전적 의미와 예문을 알려줘.
         
         텍스트: ${word}
         문맥: ${context}
 
-        텍스트의 정의가 여러개라면 문맥의 맥락을 파악해서 문맥 속에 사용된 정의로 대답해줘.
+        텍스트의 의미가 여러개라면 문맥의 맥락을 파악해서 문맥 속에 사용된 의미로 대답해줘.
         그리고 문맥에서 사용된 표현을 그대로 사용하면 안돼.
 
+        예문은 텍스트를 활용한 문장을 하나 작성해줘.
+        의미를 정확하게 반영하는 예문이어야해.
+        
         응답 형식은 아래와 같이 해줘:
-        정의: (추론된 정의)
+        의미: (텍스트의 의미)
         예문: (작성된 예문)
 
-        반드시 응답 형식을 지켜서 답변하고, ~다., ~것., ~이다. 등의 문장으로 끝나도록 해줘.
+        의미는 반드시 명사 또는 ~음, ~함 등의 명사형 어미로 끝나야 하고 절대 NEVER ~이다., ~하다. 등 서술형으로 끝나면 안돼.
+        예문은 ~입니다., ~합니다. 등의 존댓말이 아니라 ~다., ~이다. 등의 평서형 어미로 끝나도록 답해줘.
+
+        반드시 응답 형식을 지켜서 답변해야해.
     `;
 
     try {
@@ -43,7 +49,7 @@ window.callGeminiAPI = async function(word, context) {
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: {
-                    temperature: 0.2,
+                    temperature: 2.0,
                     topK: 40,
                     topP: 0.95,
                     maxOutputTokens: 1024,
@@ -70,9 +76,9 @@ window.callGeminiAPI = async function(word, context) {
         let definition = '';
         let example = '';
 
-        // 각 줄을 순회하며 정의와 예문 추출
+        // 각 줄을 순회하며 의미와 예문 추출
         for (const line of lines) {
-            if (line.startsWith('정의:')) {
+            if (line.startsWith('의미:')) {
                 definition = line.slice(3).trim();
             } else if (line.startsWith('예문:')) {
                 example = line.slice(3).trim();
@@ -97,7 +103,7 @@ window.callGeminiAPI = async function(word, context) {
 
 // callGeminiAPI(word, context)
 //     .then(({ definition, example }) => {
-//         console.log("정의:", definition);
+//         console.log("의미:", definition);
 //         console.log("예문:", example);
 //     })
 //     .catch(error => {
