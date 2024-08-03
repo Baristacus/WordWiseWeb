@@ -7,30 +7,32 @@
 // 오프라인 모드 관리: 네트워크 상태 모니터링 및 오프라인 모드 전환
 
 
-// 컨텐츠 스크립트로부터의 메시지 리스너
+// content.js로부터 메시지를 받아 처리
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'saveWord') {
-        handleSaveWord(request.word, request.context)
-            .then(result => sendResponse({ success: true, result: result }))
-            .catch(error => sendResponse({ success: false, error: error.message }));
-
-        return true; // 비동기 응답을 위해 true 반환
-    }
-});
-
-// 단어 저장 처리 함수
-async function handleSaveWord(word, context) {
-    try {
-        // api.js의 Gemini API 함수 호출
-        const { definition, example } = await window.callGeminiAPI(word, context);
-
+    if (request.action === 'getDefinition') {
+        // api.js의 callGeminiAPI 함수 호출
+        callGeminiAPI(request.word, request.context)
+            .then(result => {
+                // 결과를 content.js로 전송
+                chrome.tabs.sendMessage(sender.tab.id, {
+                    action: 'definitionResult',
+                    word: request.word,
+                    definition: result.definition,
+                    example: result.example
+                });
+            })
+            .catch(error => {
+                console.error('API 호출 오류:', error);
+            });
+    } else if (request.action === 'saveWord') {
         // storage.js의 saveWord 함수 호출
-        await window.saveWord(word, definition, example);
-
-        return { word, definition, example };
-    } catch (error) {
-        console.error('Error saving word:', error);
-        throw error;
+        saveWord(request.word, request.definition, request.example)
+            .then(() => {
+                console.log('단어 저장 완료');
+            })
+            .catch(error => {
+                console.error('단어 저장 오류:', error);
+            });
     }
-}
-
+    return true; // 비동기 응답을 위해 true 반환
+});
