@@ -113,9 +113,14 @@ function createFloatingPopup(word, definition, example) {
     popup.innerHTML = `
         <div class="card-header d-flex justify-content-between align-items-center">
             <span class="h5"><img src="${chrome.runtime.getURL('images/icon-32.png')}" alt="Word Wise Web 로고" height="24"> Word Wise Web</span>
-            <button type="button" class="btn-close" id="closePopupBtn" aria-label="Close"></button>
+            <div>
+                <i class="bi bi-list" style="font-size: 1.5rem; cursor: pointer; margin-right: 10px;"></i>
+                <i class="bi bi-gear" style="font-size: 1.5rem; cursor: pointer; margin-right: 10px;"></i>
+                <i class="bi bi-x" id="closePopupBtn" style="font-size: 1.5rem; cursor: pointer;"></i>
+            </div>
         </div>
         <div class="card-body">
+            <p><strong>단어:</strong> ${word}</p>
             <p><strong>의미:</strong> ${definition}</p>
             <p><strong>예문:</strong> ${example}</p>
         </div>
@@ -124,7 +129,7 @@ function createFloatingPopup(word, definition, example) {
                 <a href="#" class="btn btn-link">저장된 단어인지 표시</a>
                 <a href="#" class="btn btn-link">몇 번 찾아본 단어인지 표시</a>
                 <a href="#" class="btn btn-link">저장된 단어라면 날짜 표시</a>
-                <button type="button" class="btn btn-primary" id="saveWordBtn">저장</button> <!-- 저장 버튼 추가 -->
+                <i class="bi bi-bookmark" style="font-size: 1.5rem; cursor: pointer;"></i>
             </div>
         </div>
     `;
@@ -138,7 +143,7 @@ function createFloatingPopup(word, definition, example) {
 
     document.getElementById('saveWordBtn').addEventListener('click', async () => {
         try {
-            const result = await callGeminiAPI(word, selectedContext);
+            const result = await callBackendAPI(word, selectedContext);
             await saveWord(word, result.definition, result.example);
             alert('단어가 성공적으로 저장되었습니다.');
             popup.remove();
@@ -158,8 +163,28 @@ function handleIconClick() {
     if (selectedText.length > 0) {
         console.log('context:', selectedContext); // 디버깅용 콘솔 로그 추가
 
-        // 임의의 데이터를 사용하여 팝업 생성
+        // 플로팅 팝업 생성 및 API 호출
         createFloatingPopup(selectedText, "정의를 불러오는 중...", "예문을 불러오는 중...");
+        
+        chrome.runtime.sendMessage({
+            action: 'getDefinition',
+            word: selectedText,
+            context: selectedContext
+        });
     }
     hideFloatingIcon();
 }
+
+// 백그라운드에서 정의 및 예문 수신
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'definitionResult') {
+        const popup = document.getElementById('floatingPopup');
+        if (popup) {
+            popup.querySelector('.card-body').innerHTML = `
+                <p><strong>단어:</strong> ${message.word}</p>
+                <p><strong>의미:</strong> ${message.definition}</p>
+                <p><strong>예문:</strong> ${message.example}</p>
+            `;
+        }
+    }
+});
