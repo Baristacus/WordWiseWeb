@@ -1,11 +1,23 @@
 // Gemini API 키
-const API_KEY = 'YOUR_API_KEY';
+let API_KEY = '';
 const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
 
 
+// 저장되어 있는 API 키 가져오기
+chrome.storage.sync.get(['apiKey'], result => {
+    if (result.apiKey) {
+        API_KEY = result.apiKey;
+    }
+});
+
+
 // Gemini API를 사용하여 단어 정의 가져오기
-// window.callGeminiAPI = async function(word, context) {
-async function callGeminiAPI(word, context) {
+window.callGeminiAPI = async function(word, context) {
+// async function callGeminiAPI(word, context) {    // js 테스트용 코드
+    if (!API_KEY) {
+        throw new Error('등록된 API_KEY가 없습니다.');
+    }
+
     const prompt = `
         너는 백과사전이야. 아래의 텍스트와 텍스트가 포함된 문맥을 보고 텍스트의 정의와 예문을 알려줘야해.
         
@@ -40,14 +52,18 @@ async function callGeminiAPI(word, context) {
         });
 
         if (!response.ok) {
+            if (response.status === 400) {
+                // API 키 오류인지 확인
+                const errorData = await response.json();
+                if (errorData.error && errorData.error.message.includes('API key not valid')) {
+                    throw new Error('API 키가 유효하지 않습니다. API 키를 확인해주세요.');
+                }
+            }
             throw new Error(`API 호출 실패: ${response.status} ${response.statusText}`);
         }
 
         const data = await response.json();
         const result = data.candidates[0].content.parts[0].text;
-
-        // console.log(result)
-        // console.log("------------------------------------")
 
         // 응답을 줄 단위로 분리
         const lines = result.split('\n');
@@ -75,15 +91,15 @@ async function callGeminiAPI(word, context) {
 };
 
 
-// js 테스트용 코드
-const word = "혁신";
-const context = "기술의 발전은 우리 삶에 큰 혁신을 가져왔습니다. 스마트폰의 등장으로 커뮤니케이션 방식이 완전히 바뀌었고, 인공지능의 발전은 다양한 산업 분야에 새로운 가능성을 열어주고 있습니다.";
+// // js 테스트용 코드
+// const word = "혁신";
+// const context = "기술의 발전은 우리 삶에 큰 혁신을 가져왔습니다. 스마트폰의 등장으로 커뮤니케이션 방식이 완전히 바뀌었고, 인공지능의 발전은 다양한 산업 분야에 새로운 가능성을 열어주고 있습니다.";
 
-callGeminiAPI(word, context)
-    .then(({ definition, example }) => {
-        console.log("정의:", definition);
-        console.log("예문:", example);
-    })
-    .catch(error => {
-        console.error("에러 발생:", error.message);
-    });
+// callGeminiAPI(word, context)
+//     .then(({ definition, example }) => {
+//         console.log("정의:", definition);
+//         console.log("예문:", example);
+//     })
+//     .catch(error => {
+//         console.error("에러 발생:", error.message);
+//     });
