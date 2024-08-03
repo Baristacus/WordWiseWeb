@@ -17,28 +17,24 @@ async function callGeminiAPI(word, context) {
 
     const prompt = `
         너는 백과사전이야. 아래의 텍스트와 텍스트가 포함된 문맥을 보고 텍스트의 사전적 의미와 예문을 알려줘.
+        
+        텍스트: ${word}
+        문맥: ${context}
 
-        '텍스트': ${word}
-        '문맥': ${context}
+        텍스트의 의미가 여러개라면 문맥의 맥락을 파악해서 문맥 속에 사용된 의미로 대답해줘.
+        그리고 문맥에서 사용된 표현을 그대로 사용하면 안돼.
 
-        '텍스트'의 의미가 여러 개라면 '문맥'의 맥락을 파악해서 '문맥' 속에 사용된 의미로 대답해줘.
-        그리고 '문맥'에서 사용된 표현을 그대로 사용하면 안 돼.
-
-        예문은 '텍스트'를 활용한 문장을 하나 작성해줘.
-        '텍스트'가 반드시 포함된 문장이어야 하며, 의미를 정확하게 반영하는 예문이어야 해.
-        예문에서 '텍스트'가 빠지지 않도록 유의해줘. 예문은 '텍스트'가 들어간 문장이어야 하며, '텍스트'가 없는 예문은 안 돼.
-        '의미'에서 작성된 의미와 일치하는 예문을 작성해줘.
-
+        예문은 텍스트를 활용한 문장을 하나 작성해줘.
+        의미를 정확하게 반영하는 예문이어야해.
+        
         응답 형식은 아래와 같이 해줘:
-        의미: ('텍스트'의 의미)
+        의미: (텍스트의 의미)
         예문: (작성된 예문)
 
-        의미는 반드시 정확한 사전적 의미를 가져야해.
-        의미는 반드시 명사 또는 ~음, ~함 등의 명사형 어미로 끝나야 하고 절대 NEVER ~이다., ~하다. 등 서술형으로 끝나면 안 돼.
-        예문은 ~입니다., ~합니다. 등의 존댓말이 아니라 ~다., ~이다. 등의 평서형 어미로 끝나도록 답변해줘.
+        의미는 반드시 명사 또는 ~음, ~함 등의 명사형 어미로 끝나야 하고 절대 NEVER ~이다., ~하다. 등 서술형으로 끝나면 안돼.
+        예문은 ~입니다., ~합니다. 등의 존댓말이 아니라 ~다., ~이다. 등의 평서형 어미로 끝나도록 답해줘.
 
-        반드시 응답 형식을 지켜서 답변해야 해.
-
+        반드시 응답 형식을 지켜서 답변해야해.
     `;
 
     try {
@@ -94,12 +90,15 @@ async function callGeminiAPI(word, context) {
     }
 }
 
-// 단어 저장 함수
+/// 단어 저장 함수
 function saveWord(word, definition, example) {
     return new Promise((resolve, reject) => {
         chrome.storage.sync.get(['recentWords', 'wordCount'], function (result) {
             let recentWords = result.recentWords || [];
             let wordCount = result.wordCount || 0;
+
+            console.log('현재 저장된 단어 수:', wordCount);
+            console.log('새로 저장할 단어:', word);
 
             const newWord = {
                 term: word,
@@ -110,14 +109,22 @@ function saveWord(word, definition, example) {
 
             const existingIndex = recentWords.findIndex(item => item.term === word);
             if (existingIndex !== -1) {
+                console.log('이미 존재하는 단어 업데이트');
                 recentWords[existingIndex] = newWord;
             } else {
+                console.log('새 단어 추가');
                 recentWords.unshift(newWord);
                 wordCount++;
             }
 
             chrome.storage.sync.set({ recentWords, wordCount }, function () {
-                resolve({ recentWords, wordCount });
+                if (chrome.runtime.lastError) {
+                    console.error('저장 중 오류 발생:', chrome.runtime.lastError);
+                    reject(new Error('단어 저장 중 오류가 발생했습니다.'));
+                } else {
+                    console.log('단어 저장 완료. 현재 단어 수:', wordCount);
+                    resolve({ recentWords, wordCount });
+                }
             });
         });
     });
@@ -179,23 +186,39 @@ function getPremiumDays() {
 
 // 메시지 리스너
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    console.log('메시지 수신:', request);
+
     if (request.action === 'getDefinition') {
+        console.log('getDefinition 요청 처리 시작');
         callGeminiAPI(request.word, request.context)
-            .then(result => sendResponse({
-                success: true,
-                word: request.word,
-                definition: result.definition,
-                example: result.example
-            }))
-            .catch(error => sendResponse({
-                success: false,
-                error: error.message
-            }));
+            .then(result => {
+                console.log('Gemini API 결과:', result);
+                sendResponse({
+                    success: true,
+                    word: request.word,
+                    definition: result.definition,
+                    example: result.example
+                });
+            })
+            .catch(error => {
+                console.error('Gemini API 오류:', error);
+                sendResponse({
+                    success: false,
+                    error: error.message
+                });
+            });
         return true; // 비동기 응답을 위해 true 반환
     } else if (request.action === 'saveWord') {
+        console.log('saveWord 요청 처리 시작');
         saveWord(request.word, request.definition, request.example)
-            .then(result => sendResponse({ success: true, result }))
-            .catch(error => sendResponse({ success: false, error: error.message }));
+            .then(result => {
+                console.log('단어 저장 결과:', result);
+                sendResponse({ success: true, result });
+            })
+            .catch(error => {
+                console.error('단어 저장 오류:', error);
+                sendResponse({ success: false, error: error.message });
+            });
         return true; // 비동기 응답을 위해 true 반환
     } else if (request.action === 'deleteWord') {
         deleteWord(request.word)
