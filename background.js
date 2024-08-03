@@ -10,8 +10,11 @@ chrome.storage.sync.get(['apiKey'], result => {
 });
 
 // Gemini API를 사용하여 단어 의미 가져오기
-async function callGeminiAPI(word, context) {
-    if (!API_KEY) {
+async function callGeminiAPI(word, context, isRetry = false) {
+    if (!API_KEY && isRetry) {
+        console.log("▶▶▶▶API_KEY를 받아오지 못해서 재실행");
+        return callGeminiAPI(word, context, ture);
+    } else if (!API_KEY && isRetry) {
         throw new Error('등록된 API_KEY가 없습니다.');
     }
 
@@ -83,7 +86,7 @@ async function callGeminiAPI(word, context) {
         }
 
         if (!definition || !example) {
-            throw new Error('응답 형식이 올바르지 않습니다.');
+            return callGeminiAPI(word, context);
         }
 
         return { definition, example };
