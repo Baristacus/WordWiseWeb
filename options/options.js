@@ -195,27 +195,48 @@ apiKeySaveBtn.addEventListener('click', () => {
 
 saveSettingsBtn.addEventListener('click', saveSettings);
 
-// 네비게이션 기능
-document.querySelectorAll('.nav-link').forEach(link => {
-    link.addEventListener('click', function (e) {
-        e.preventDefault();
-        document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
-        this.classList.add('active');
-        const targetId = this.getAttribute('href').substring(1);
-        document.querySelectorAll('main section').forEach(section => {
-            section.style.display = section.id === targetId ? 'block' : 'none';
-        });
-    });
-});
-
-// 초기 페이지 로드 시 첫 번째 섹션만 표시
-document.querySelector('main section').style.display = 'block';
-document.querySelectorAll('main section').forEach((section, index) => {
-    if (index > 0) section.style.display = 'none';
-});
-
 // 페이지 로드 시 설정 불러오기
 document.addEventListener('DOMContentLoaded', loadSettings);
 
 // 페이지 로드 시 DB 정보 업데이트
 document.addEventListener('DOMContentLoaded', getDatabaseInfo);
+
+// URL 파라미터에서 섹션 정보를 가져오는 함수
+function getSectionFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('section');
+}
+
+// 특정 섹션을 표시하는 함수
+function showSection(sectionId) {
+    document.querySelectorAll('main section').forEach(section => {
+        section.style.display = section.id === sectionId ? 'block' : 'none';
+    });
+
+    // 네비게이션 메뉴 활성화 상태 업데이트
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href').substring(1) === sectionId);
+    });
+}
+
+// 페이지 로드 시 실행되는 초기화 함수
+function initializePage() {
+    const section = getSectionFromUrl() || 'wordList'; // 기본값으로 'wordList' 사용
+    showSection(section);
+    loadSettings();
+    getDatabaseInfo();
+}
+
+// 페이지 로드 시 초기화 함수 실행
+document.addEventListener('DOMContentLoaded', initializePage);
+
+// 네비게이션 기능 (기존 코드 수정)
+document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', function (e) {
+        e.preventDefault();
+        const targetId = this.getAttribute('href').substring(1);
+        showSection(targetId);
+        // URL 업데이트 (옵션)
+        history.pushState(null, '', `?section=${targetId}`);
+    });
+});

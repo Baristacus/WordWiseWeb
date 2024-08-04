@@ -198,17 +198,22 @@ function sendMessageToBackground(message) {
     });
 }
 
+// 옵션 페이지로 이동하는 함수
+function openOptionsPage(section) {
+    chrome.tabs.create({ url: `options/options.html?section=${section}` });
+}
+
 // 이벤트 리스너 등록
 userProfileBtn.addEventListener('click', () => {
-    chrome.tabs.create({ url: 'options/options.html#profile' });
+    openOptionsPage('profile');
 });
 
 settingsBtn.addEventListener('click', () => {
-    chrome.tabs.create({ url: 'options/options.html#settings' });
+    openOptionsPage('settings');
 });
 
 wordListBtn.addEventListener('click', () => {
-    chrome.tabs.create({ url: 'options/options.html#wordList' });
+    openOptionsPage('wordList');
 });
 
 addWordBtn.addEventListener('click', () => {
