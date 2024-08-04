@@ -53,23 +53,23 @@ document.addEventListener('selectionchange', handleTextSelection);
 // 마우스 이벤트 리스너 추가
 document.addEventListener('mousedown', () => {
     isSelecting = true;
-    console.log('마우스 다운: 선택 시작');
+    // console.log('마우스 다운: 선택 시작');
 });
 document.addEventListener('mouseup', () => {
     setTimeout(() => {
         isSelecting = false;
-        console.log('마우스 업: 선택 종료');
+        // console.log('마우스 업: 선택 종료');
     }, 10);
 });
 
 // 텍스트 선택 처리 함수
 function handleTextSelection(event) {
-    console.log('텍스트 선택 이벤트 발생');
+    // console.log('텍스트 선택 이벤트 발생');
     setTimeout(async () => {
         const selection = window.getSelection();
         const newSelectedText = selection.toString().trim();
 
-        console.log('현재 선택된 텍스트:', newSelectedText);
+        // console.log('현재 선택된 텍스트:', newSelectedText);
 
         if (newSelectedText.length > 0 && newSelectedText.split(/\s+/).length <= 3) {
             selectedText = newSelectedText;
@@ -86,13 +86,13 @@ function handleTextSelection(event) {
                 showFloatingMessage("API 키를 먼저 등록해 주세요.", rect.left + window.pageXOffset, rect.top + window.pageYOffset);
             }
 
-            console.log('선택된 텍스트 업데이트:', selectedText);
-            console.log('문맥:', selectedContext);
+            // console.log('선택된 텍스트 업데이트:', selectedText);
+            // console.log('문맥:', selectedContext);
         } else if (!isSelecting && event.type === 'mouseup' && event.target !== floatingIcon && event.target !== floatingMessage) {
             hideFloatingElements();
             selectedText = '';
             selectedContext = '';
-            console.log('선택 해제: 텍스트와 문맥 초기화');
+            // console.log('선택 해제: 텍스트와 문맥 초기화');
         }
     }, 10);
 }
@@ -103,14 +103,14 @@ function showFloatingMessage(message, x, y) {
     floatingMessage.style.left = `${Math.max(x, 5)}px`;
     floatingMessage.style.top = `${Math.max(y - 40, 5)}px`;
     floatingMessage.style.display = 'block';
-    console.log('플로팅 메시지 표시됨');
+    // console.log('플로팅 메시지 표시됨');
 }
 
 // 플로팅 요소 숨김 함수
 function hideFloatingElements() {
     floatingIcon.style.display = 'none';
     floatingMessage.style.display = 'none';
-    console.log('플로팅 요소 숨겨짐');
+    // console.log('플로팅 요소 숨겨짐');
 }
 
 // 플로팅 아이콘 표시 함수
@@ -120,13 +120,13 @@ function showFloatingIcon(x, y) {
     floatingIcon.style.left = `${Math.max(x - iconSize - margin, margin)}px`;
     floatingIcon.style.top = `${Math.max(y - iconSize - margin, margin)}px`;
     floatingIcon.style.display = 'block';
-    console.log('플로팅 아이콘 표시됨');
+    // console.log('플로팅 아이콘 표시됨');
 }
 
 // 플로팅 아이콘 숨김 함수
 function hideFloatingIcon() {
     floatingIcon.style.display = 'none';
-    console.log('플로팅 아이콘 숨겨짐');
+    // console.log('플로팅 아이콘 숨겨짐');
 }
 
 // 선택된 텍스트의 주변 문맥을 가져오는 함수
@@ -143,32 +143,32 @@ floatingIcon.addEventListener('click', handleIconClick);
 
 // 아이콘 클릭 처리 함수
 async function handleIconClick() {
-    console.log('플로팅 아이콘 클릭됨');
-    console.log('클릭 시 선택된 텍스트:', selectedText);
-    console.log('클릭 시 문맥:', selectedContext);
+    // console.log('플로팅 아이콘 클릭됨');
+    // console.log('클릭 시 선택된 텍스트:', selectedText);
+    // console.log('클릭 시 문맥:', selectedContext);
 
     if (selectedText && selectedText.length > 0) {
         try {
-            console.log('Gemini API 호출 시작');
+            // console.log('Gemini API 호출 시작');
             const response = await sendMessageToBackground({
                 action: 'getDefinition',
                 word: selectedText,
                 context: selectedContext
             });
-            console.log('Gemini API 응답:', response);
+            // console.log('Gemini API 응답:', response);
 
             if (response && response.success) {
-                console.log('단어 저장 시작');
+                // console.log('단어 저장 시작');
                 const saveResponse = await sendMessageToBackground({
                     action: 'saveWord',
                     word: response.word,
                     definition: response.definition,
                     example: response.example
                 });
-                console.log('단어 저장 응답:', saveResponse);
+                // console.log('단어 저장 응답:', saveResponse);
 
                 if (saveResponse && saveResponse.success) {
-                    console.log('단어가 성공적으로 저장됨');
+                    // console.log('단어가 성공적으로 저장됨');
                     showNotification(`단어가 저장되었습니다: ${selectedText}`);
                 } else {
                     console.error('단어 저장 실패:', saveResponse ? saveResponse.error : '응답 없음');
@@ -226,11 +226,11 @@ function showNotification(message) {
 // 문서 클릭 이벤트 리스너
 document.addEventListener('click', (event) => {
     if (event.target !== floatingIcon && event.target !== floatingMessage) {
-        console.log('문서 클릭: 플로팅 요소 외 영역');
+        // console.log('문서 클릭: 플로팅 요소 외 영역');
         hideFloatingElements();
         selectedText = '';
         selectedContext = '';
     }
 });
 
-console.log('Word Wise Web content script loaded');
+// console.log('Word Wise Web content script loaded');

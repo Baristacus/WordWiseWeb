@@ -93,7 +93,7 @@ async function updateWordCount() {
 
         if (response && response.success) {
             wordCountSpan.textContent = response.count;
-            console.log('업데이트된 단어 수:', response.count);
+            // console.log('업데이트된 단어 수:', response.count);
         } else {
             throw new Error(response ? response.error : '단어 수를 가져오는데 실패했습니다.');
         }

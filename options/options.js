@@ -20,6 +20,33 @@ function formatDate(dateString) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
+// 알림 표시 함수
+function showNotification(message, type = 'info') {
+    const notificationContainer = document.getElementById('notificationContainer');
+    if (!notificationContainer) {
+        console.error('Notification container not found');
+        return;
+    }
+
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show`;
+    notification.role = 'alert';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    notificationContainer.appendChild(notification);
+
+    // 3초 후 자동으로 알림 제거
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            notificationContainer.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
+
 // 단어 목록을 페이지네이션에 맞게 표시하는 함수
 function displayWordList() {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -164,10 +191,10 @@ function displayPagination() {
 // 단어 목록을 가져오는 함수
 async function fetchWordList() {
     try {
-        console.log('fetchWordList called');
+        // console.log('fetchWordList called');
         const response = await sendMessageToBackground({ action: 'getRecentWords', limit: Infinity });
 
-        console.log('Response received:', response);
+        // console.log('Response received:', response);
         if (!response || !response.success) {
             throw new Error(response ? response.error : '응답이 없습니다.');
         }
@@ -206,10 +233,10 @@ async function handleDeleteWord(word) {
             }
 
             await fetchWordList();
-            showNotification('단어가 성공적으로 삭제되었습니다!');
+            showNotification('단어가 성공적으로 삭제되었습니다!', 'success');
         } catch (error) {
             console.error('단어 삭제 중 오류 발생:', error);
-            showNotification(error.message || '단어 삭제 중 오류가 발생했습니다.', 'error');
+            showNotification(error.message || '단어 삭제 중 오류가 발생했습니다.', 'danger');
         }
     }
 }
@@ -357,7 +384,7 @@ function saveApiKey(apiKey) {
                 console.error('API 키 저장 오류:', chrome.runtime.lastError);
                 reject(chrome.runtime.lastError);
             } else {
-                console.log('API 키가 성공적으로 저장됨');
+                // console.log('API 키가 성공적으로 저장됨');
                 resolve();
             }
         });

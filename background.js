@@ -12,7 +12,7 @@ function initDB() {
 
         request.onsuccess = (event) => {
             db = event.target.result;
-            console.log('IndexedDB 연결 성공');
+            // console.log('IndexedDB 연결 성공');
             resolve(db);
         };
 
@@ -20,7 +20,7 @@ function initDB() {
             db = event.target.result;
             const objectStore = db.createObjectStore('words', { keyPath: 'term' });
             objectStore.createIndex('addedDate', 'addedDate', { unique: false });
-            console.log('IndexedDB 스키마 업그레이드 완료');
+            // console.log('IndexedDB 스키마 업그레이드 완료');
         };
     });
 }
@@ -42,7 +42,7 @@ async function loadApiKey() {
     return new Promise((resolve) => {
         chrome.storage.sync.get(['apiKey'], result => {
             API_KEY = result.apiKey || '';
-            console.log(API_KEY ? 'API 키 로드됨' : '저장된 API 키가 없음');
+            // console.log(API_KEY ? 'API 키 로드됨' : '저장된 API 키가 없음');
             resolve(API_KEY);
         });
     });
@@ -53,7 +53,7 @@ async function initialize() {
     try {
         await initDB();
         await loadApiKey();
-        console.log('초기화 완료');
+        // console.log('초기화 완료');
     } catch (error) {
         console.error('초기화 실패:', error);
     }
@@ -167,7 +167,7 @@ async function saveWord(word, definition, example) {
         // 이전에 저장된 단어인지 확인
         const getRequest = store.get(word);
 
-        getRequest.onsuccess = function(event) {
+        getRequest.onsuccess = function (event) {
             let newWord;
             if (event.target.result) {
                 // 기존 단어가 있으면 카운트를 증가시키고 날짜 갱신
@@ -192,14 +192,14 @@ async function saveWord(word, definition, example) {
             // 새 데이터 저장
             const putRequest = store.put(newWord)
 
-            putRequest.onerror = function(evnet) {
+            putRequest.onerror = function (evnet) {
                 console.error('단어 저장 중 오류 발생:', event.target.error);
                 reject(new Error('단어 저장 중 오류가 발생했습니다.'));
             };
 
-            putRequest.onsuccess = function(event) {
-                console.log('단어가 성공적으로 저장되었습니다:', word);
-            resolve(newWord);
+            putRequest.onsuccess = function (event) {
+                // console.log('단어가 성공적으로 저장되었습니다:', word);
+                resolve(newWord);
             };
         };
 
@@ -228,7 +228,7 @@ async function deleteWord(wordToDelete) {
         };
 
         request.onsuccess = (event) => {
-            console.log('단어가 성공적으로 삭제되었습니다:', wordToDelete);
+            // console.log('단어가 성공적으로 삭제되었습니다:', wordToDelete);
             resolve();
         };
     });
@@ -283,7 +283,7 @@ async function getWordCount() {
 
         countRequest.onsuccess = (event) => {
             const count = event.target.result;
-            console.log('현재 저장된 단어 수:', count);
+            // console.log('현재 저장된 단어 수:', count);
             resolve(count);
         };
     });
@@ -327,7 +327,7 @@ const STORAGE_LIMIT = 5 * 1024 * 1024;
 
 // 메시지 리스너
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log('메시지 수신:', request);
+    // console.log('메시지 수신:', request);
 
     switch (request.action) {
         case 'getRecentWords':
@@ -379,7 +379,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         case 'getWordCount':
             getWordCount()
                 .then(count => {
-                    console.log('단어 수 요청에 대한 응답:', count);
+                    // console.log('단어 수 요청에 대한 응답:', count);
                     sendResponse({ success: true, count: count });
                 })
                 .catch(error => {
@@ -437,6 +437,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 chrome.storage.onChanged.addListener((changes, namespace) => {
     if (namespace === 'sync' && changes.apiKey) {
         API_KEY = changes.apiKey.newValue;
-        console.log('API 키가 업데이트됨');
+        // console.log('API 키가 업데이트됨');
     }
 });
