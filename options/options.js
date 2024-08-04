@@ -36,10 +36,10 @@ function displayWordList() {
         paginatedWords.forEach(word => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${word.term}</td>
+                <th scope="row">${word.term}</th>
                 <td>${word.definition}</td>
                 <td>${formatDate(word.addedDate)}</td>
-                <td><button class="btn btn-sm btn-primary delete-word-btn" data-word="${word.term}">삭제</button></td>
+                <td><button class="btn btn-sm btn-danger delete-word-btn" data-word="${word.term}">삭제</button></td>
             `;
             wordTableBody.appendChild(row);
         });
