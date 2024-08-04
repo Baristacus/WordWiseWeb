@@ -104,23 +104,29 @@
                 <div class="card">
                     <div class="card-body my-5 py-5">
                         <figure class="text-center my-5 py-5">
-                            <blockquote class="blockquote">
-                                여기에 저장된 단어들 중 랜덤으로 의미를 보여줌
-                                저장된 횟수가 많을수록 더 자주 나옴
+                            <blockquote class="blockquote" id="learnWordQuiz">
+                                랜덤으로 출력되는 의미를 보고 단어를 맞춰주세요.
                             </blockquote>
-                            <figcaption class="blockquote-footer">
-                                0000년 00월 00일에 추가됨
+                            <figcaption class="blockquote-footer" id="learnWordExplain">
+                                저장된 횟수가 많을수록 더 자주 출력됩니다.
                             </figcaption>
+                            <button
+                                class="btn btn-outline-primary"
+                                type="button"
+                                id="learnWordQuizBtn">
+                                문제 풀기
+                            </button>
                         </figure>
                     </div>
                     <div class="card-footer">
                         <div class="input-group">
-                            <span class="input-group-text" id="learnWordInput"
+                            <span class="input-group-text" id="learnWordInputBox"
                                 >의미에 해당하는 단어를 입력하세요</span
                             >
                             <input
                                 type="text"
                                 class="form-control"
+                                id="learnWordInput"
                                 aria-label="Sizing example input"
                                 aria-describedby="learnWordInput" />
                             <button

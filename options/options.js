@@ -216,6 +216,107 @@ wordTableBody.addEventListener('click', (event) => {
 });
 
 
+
+// 학습하기 기능을 위한 DOM 요소
+const learnWordQuiz = document.getElementById('learnWordQuiz');
+const learnWordExplain = document.getElementById('learnWordExplain');
+const learnWordQuizBtn = document.getElementById('learnWordQuizBtn');
+const learnWordInputBox = document.getElementById('learnWordInputBox');
+const learnWordInput = document.getElementById('learnWordInput');
+const learnWordBtn = document.getElementById('learnWordBtn');
+
+// 현재 문제로 선택된 단어에 대한 정보를 담아두는 딕셔너리
+let wordForQuiz = {};
+
+// 문제풀이 상태 확인하기 위한 변수
+let isCorrected = false;
+
+// 문제 풀기 버튼 이벤트 리스너
+learnWordQuizBtn.addEventListener('click', async () => {
+    await setQuiz();
+});
+
+// 정답 입력 버튼 이벤트 리스너
+learnWordBtn.addEventListener('click', () => {
+    if (!isCorrected) {
+        checkAnswer();
+    }
+});
+learnWordInput.addEventListener('keypress', function(event) {
+    if (event.key === 'Enter' && !isCorrected) {
+        checkAnswer();
+    }
+});
+
+// 리스트에서 가중치를 부여해서 랜덤한 값을 선택
+function getWeightedRandomItem(list, weightKey) {
+    const totalWeight = list.reduce((sum, item) => sum + item[weightKey], 0);
+    let randomWeight = Math.random() * totalWeight;
+    
+    for (let item of list) {
+        randomWeight -= item[weightKey];
+        if (randomWeight <= 0) {
+            return item;
+        }
+    }
+}
+
+
+// 학습하기 문제 세팅 - 단어 목록을 가져와 퀴즈 띄움
+async function setQuiz() {
+    learnWordInput.classList.remove("border-success");
+    learnWordInput.classList.remove("border-danger");
+    learnWordInputBox.classList.remove("border-success");
+    learnWordInputBox.classList.remove("border-danger");
+    learnWordQuizBtn.innerText = '다음 문제 풀기';
+    learnWordInput.value = '';
+
+    try {
+        const response = await sendMessageToBackground({ action: 'getRecentWords', limit: Infinity }); // 전체 단어 목록을 가져오기 위해 limit을 무한대로 설정
+
+        if (!response || !response.success) {
+            throw new Error(response ? response.error : '응답이 없습니다.');
+        }
+
+        const wordLists = response.words;
+
+        if(wordLists.length === 0) {
+            console.log('저장된 단어가 없습니다.');
+        } else {
+            wordForQuiz = getWeightedRandomItem(wordLists, 'count');
+            isCorrected = false;
+            learnWordQuiz.textContent = wordForQuiz.definition;
+            learnWordExplain.textContent = "이 의미를 갖는 단어를 적어주세요."
+        }
+    } catch (error) {
+        console.error('단어 목록 받아오는 중 중 오류 발생:', error);
+    }  
+}
+
+// 학습하기 문제 정답 확인
+function checkAnswer() {
+    const userInput = learnWordInput.value.trim();
+    if (userInput) {
+        learnWordInput.classList.remove("border-success");
+        learnWordInput.classList.remove("border-danger");
+        learnWordInputBox.classList.remove("border-success");
+        learnWordInputBox.classList.remove("border-danger");
+        if (userInput == wordForQuiz.term) {
+            isCorrected = true;
+            learnWordInput.classList.add("border-success");
+            learnWordInputBox.classList.add("border-success");
+            console.log('정답입니다')
+        } else {
+            learnWordInput.classList.add("border-danger");
+            learnWordInputBox.classList.add("border-danger");
+            console.log('오답입니다');
+        }
+    } 
+}
+
+
+
+
 // API 키 저장 함수
 function saveApiKey(apiKey) {
     return new Promise((resolve, reject) => {
