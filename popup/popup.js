@@ -8,6 +8,7 @@ const recentWordsAccordion = document.getElementById('recentWordsAccordion');
 const learnBtn = document.getElementById('learnBtn');
 const wordCountSpan = document.getElementById('wordCount');
 const premiumDaysSpan = document.getElementById('premiumDays');
+const apiKeyMessage = document.getElementById('apiKeyMessage');
 
 // 날짜 포맷팅 함수
 function formatDate(dateString) {
@@ -108,6 +109,36 @@ async function getPremiumDays() {
         console.error('프리미엄 기간 가져오기 중 오류 발생:', error);
         return 0;
     }
+}
+
+// API 키 상태 확인 함수
+async function checkApiKeyStatus() {
+    try {
+        const response = await sendMessageToBackground({ action: 'checkApiKey' });
+        if (response.success) {
+            enableWordInput();
+        } else {
+            disableWordInput(response.error || 'API 키를 먼저 등록해 주세요.');
+        }
+    } catch (error) {
+        console.error('API 키 상태 확인 중 오류 발생:', error);
+        disableWordInput('API 키 상태를 확인할 수 없습니다.');
+    }
+}
+
+// 단어 입력 활성화 함수
+function enableWordInput() {
+    wordInput.disabled = false;
+    addWordBtn.disabled = false;
+    apiKeyMessage.style.display = 'none';
+}
+
+// 단어 입력 비활성화 함수
+function disableWordInput(message) {
+    wordInput.disabled = true;
+    addWordBtn.disabled = true;
+    apiKeyMessage.textContent = message;
+    apiKeyMessage.style.display = 'block';
 }
 
 // 단어 저장 처리 함수
@@ -241,6 +272,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await displayRecentWords();
     const premiumDays = await getPremiumDays();
     premiumDaysSpan.textContent = premiumDays;
+    await checkApiKeyStatus(); // API 키 상태 확인 추가
 });
 
 // 단어 삭제 버튼 이벤트 리스너

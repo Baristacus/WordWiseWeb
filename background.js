@@ -29,6 +29,14 @@ function initDB() {
 let API_KEY = '';
 const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
 
+// API 키 확인 함수
+async function checkApiKey() {
+    if (!API_KEY) {
+        await loadApiKey();
+    }
+    return API_KEY !== '';
+}
+
 // 저장된 API 키 가져오기
 async function loadApiKey() {
     return new Promise((resolve) => {
@@ -373,6 +381,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         size: size,
                         usagePercentage: usagePercentage.toFixed(2)
                     });
+                })
+                .catch(error => {
+                    sendResponse({ success: false, error: error.message });
+                });
+            return true;
+
+        case 'checkApiKey':
+            checkApiKey()
+                .then(isValid => {
+                    if (isValid) {
+                        sendResponse({ success: true });
+                    } else {
+                        sendResponse({ success: false, error: 'API 키를 먼저 등록해 주세요.' });
+                    }
                 })
                 .catch(error => {
                     sendResponse({ success: false, error: error.message });
