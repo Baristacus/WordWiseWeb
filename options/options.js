@@ -232,7 +232,7 @@ wordTableBody.addEventListener('click', (event) => {
     }
 });
 
-// 학습하기 기능을 위한 DOM 요소
+// DOM 요소 선택
 const learnWordQuiz = document.getElementById('learnWordQuiz');
 const learnWordExplain = document.getElementById('learnWordExplain');
 const learnWordQuizBtn = document.getElementById('learnWordQuizBtn');
@@ -240,7 +240,7 @@ const learnWordInputBox = document.getElementById('learnWordInputBox');
 const learnWordInput = document.getElementById('learnWordInput');
 const learnWordBtn = document.getElementById('learnWordBtn');
 
-// 현재 문제로 선택된 단어에 대한 정보를 담아두는 딕셔너리
+// 현재 문제로 선택된 단어에 대한 정보를 담아두는 객체
 let wordForQuiz = {};
 
 // 문제풀이 상태 확인하기 위한 변수
@@ -255,38 +255,30 @@ learnWordQuizBtn.addEventListener('click', async () => {
 learnWordBtn.addEventListener('click', () => {
     if (!isCorrected) {
         checkAnswer();
+    } else {
+        setQuiz(); // 다음 문제로 넘어가기
     }
 });
+
+// 엔터 키로 정답 제출
 learnWordInput.addEventListener('keypress', function (event) {
     if (event.key === 'Enter' && !isCorrected) {
         checkAnswer();
     }
 });
 
-// 리스트에서 가중치를 부여해서 랜덤한 값을 선택
-function getWeightedRandomItem(list, weightKey) {
-    const totalWeight = list.reduce((sum, item) => sum + item[weightKey], 0);
-    let randomWeight = Math.random() * totalWeight;
-
-    for (let item of list) {
-        randomWeight -= item[weightKey];
-        if (randomWeight <= 0) {
-            return item;
-        }
-    }
-}
-
 // 학습하기 문제 세팅 - 단어 목록을 가져와 퀴즈 띄움
 async function setQuiz() {
-    learnWordInput.classList.remove("border-success");
-    learnWordInput.classList.remove("border-danger");
-    learnWordInputBox.classList.remove("border-success");
-    learnWordInputBox.classList.remove("border-danger");
+    learnWordInput.classList.remove("border-success", "border-danger");
+    learnWordInputBox.classList.remove("border-success", "border-danger");
     learnWordQuizBtn.innerText = '다음 문제 풀기';
     learnWordInput.value = '';
+    learnWordInput.disabled = false; // 입력창 활성화
+    learnWordBtn.innerText = '정답 제출';
+    isCorrected = false;
 
     try {
-        const response = await sendMessageToBackground({ action: 'getRecentWords', limit: Infinity }); // 전체 단어 목록을 가져오기 위해 limit을 무한대로 설정
+        const response = await sendMessageToBackground({ action: 'getRecentWords', limit: Infinity });
 
         if (!response || !response.success) {
             throw new Error(response ? response.error : '응답이 없습니다.');
@@ -295,15 +287,23 @@ async function setQuiz() {
         const wordLists = response.words;
 
         if (wordLists.length === 0) {
-            console.log('저장된 단어가 없습니다.');
+            learnWordQuiz.textContent = '저장된 단어가 없습니다.';
+            learnWordExplain.textContent = "단어를 추가한 후 다시 시도해주세요.";
+            learnWordInput.disabled = true;
+            learnWordBtn.disabled = true;
         } else {
             wordForQuiz = getWeightedRandomItem(wordLists, 'count');
-            isCorrected = false;
             learnWordQuiz.textContent = wordForQuiz.definition;
-            learnWordExplain.textContent = "이 의미를 갖는 단어를 적어주세요."
+            learnWordExplain.textContent = "이 의미를 갖는 단어를 적어주세요.";
+            learnWordInput.disabled = false;
+            learnWordBtn.disabled = false;
         }
     } catch (error) {
-        console.error('단어 목록 받아오는 중 중 오류 발생:', error);
+        console.error('단어 목록 받아오는 중 오류 발생:', error);
+        learnWordQuiz.textContent = '오류가 발생했습니다.';
+        learnWordExplain.textContent = "잠시 후 다시 시도해주세요.";
+        learnWordInput.disabled = true;
+        learnWordBtn.disabled = true;
     }
 }
 
@@ -311,22 +311,43 @@ async function setQuiz() {
 function checkAnswer() {
     const userInput = learnWordInput.value.trim();
     if (userInput) {
-        learnWordInput.classList.remove("border-success");
-        learnWordInput.classList.remove("border-danger");
-        learnWordInputBox.classList.remove("border-success");
-        learnWordInputBox.classList.remove("border-danger");
-        if (userInput == wordForQuiz.term) {
+        learnWordInput.classList.remove("border-success", "border-danger");
+        learnWordInputBox.classList.remove("border-success", "border-danger");
+        if (userInput.toLowerCase() === wordForQuiz.term.toLowerCase()) {
             isCorrected = true;
             learnWordInput.classList.add("border-success");
             learnWordInputBox.classList.add("border-success");
-            console.log('정답입니다')
+            learnWordExplain.textContent = "정답입니다!";
+            learnWordInput.disabled = true; // 정답 후 입력창 비활성화
+            learnWordBtn.innerText = '다음 문제';
         } else {
             learnWordInput.classList.add("border-danger");
             learnWordInputBox.classList.add("border-danger");
-            console.log('오답입니다');
+            learnWordExplain.textContent = "오답입니다. 다시 시도해보세요.";
+            learnWordBtn.innerText = '다시 풀기';
         }
     }
 }
+
+// 리스트에서 가중치를 부여해서 랜덤한 값을 선택
+function getWeightedRandomItem(list, weightKey) {
+    const totalWeight = list.reduce((sum, item) => sum + (item[weightKey] || 1), 0);
+    let randomWeight = Math.random() * totalWeight;
+
+    for (let item of list) {
+        randomWeight -= (item[weightKey] || 1);
+        if (randomWeight <= 0) {
+            return item;
+        }
+    }
+    return list[0]; // 만약 선택되지 않았다면 첫 번째 항목 반환
+}
+
+// 페이지 로드 시 초기 설정
+document.addEventListener('DOMContentLoaded', () => {
+    learnWordInput.disabled = true; // 초기에 입력창 비활성화
+    learnWordBtn.disabled = true; // 초기에 버튼 비활성화
+});
 
 // API 키 저장 함수
 function saveApiKey(apiKey) {

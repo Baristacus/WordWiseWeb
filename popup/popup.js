@@ -23,11 +23,11 @@ function createWordItem(word, index) {
 
     // 단어 중복 저장 횟수에 따라 글자 색상 변경
     let countClass = ''
-    if (word.count >=3) {
+    if (word.count >= 3) {
         countClass = "text-danger fw-bold";
     } else if (word.count == 2) {
         countClass = "text-warning fw-medium";
-    } ;
+    };
 
     accordionItem.innerHTML = `
         <h2 class="accordion-header" id="heading${index}">
@@ -255,6 +255,10 @@ wordListBtn.addEventListener('click', () => {
     openOptionsPage('wordList');
 });
 
+learnBtn.addEventListener('click', () => {
+    openOptionsPage('learn');
+});
+
 addWordBtn.addEventListener('click', () => {
     const word = wordInput.value.trim();
     if (word) {
@@ -268,11 +272,6 @@ wordInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         addWordBtn.click();
     }
-});
-
-learnBtn.addEventListener('click', () => {
-    // TODO: 학습 기능 구현
-    showNotification('학습 기능은 아직 구현되지 않았습니다.', 'info');
 });
 
 // 페이지 로드 시 초기화
