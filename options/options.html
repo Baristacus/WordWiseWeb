@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Word Wise Web: 설정</title>
+        <link rel="stylesheet" href="../libs/bootstrap.min.css" />
+        <link
+            rel="stylesheet"
+            href="../fonts/Bootstrap-icons/bootstrap-icons.min.css" />
+        <link rel="stylesheet" href="options.css" />
+    </head>
+    <body>
+        <!-- 네비게이션 바 -->
+        <nav class="navbar fixed-top navbar-expand-lg bg-body-tertiary">
+            <div class="container-fluid">
+                <a
+                    class="navbar-brand engFont text-primary"
+                    href="/options/options.html">
+                    <img
+                        src="../images/favicon.png"
+                        alt="Logo"
+                        width="24"
+                        height="24"
+                        class="d-inline-block align-text-top engFont" />
+                    Word Wise Web
+                </a>
+                <button
+                    class="navbar-toggler"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#navbarSupportedContent"
+                    aria-controls="navbarSupportedContent"
+                    aria-expanded="false"
+                    aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div
+                    class="collapse navbar-collapse"
+                    id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#wordList">단어장</a>
+                        </li>
+                        <li class="nav-item ms-2">
+                            <a class="nav-link" href="#learn">학습하기</a>
+                        </li>
+                        <li class="nav-item ms-2">
+                            <a class="nav-link" href="#help">도움말</a>
+                        </li>
+                    </ul>
+
+                    <!-- 오른쪽 정렬 메뉴 -->
+                    <div class="d-flex">
+                        <a class="nav-link mx-2 text-muted" href="#settings"
+                            >환경설정</a
+                        >
+                        <a class="nav-link mx-2 text-muted" href="#about"
+                            >정보</a
+                        >
+                        <a
+                            class="nav-link mx-2 text-muted disabled"
+                            href="#"
+                            target="_blank"
+                            >홈페이지</a
+                        >
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 컨텐츠 -->
+        <main class="container py-4 mt-5">
+            <div
+                id="notificationContainer"
+                style="
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    z-index: 1050;
+                "></div>
+            <!-- 단어장 섹션 -->
+            <section id="wordList">
+                <h1><span class="engFont">Word Wise Web: </span> 단어장</h1>
+                <hr />
+                <div class="mb-3">
+                    <input
+                        type="text"
+                        id="wordSearchInput"
+                        class="form-control"
+                        placeholder="검색은 대소문자를 구분하지 않으며, 단어와 의미 모두에서 검색어를 찾습니다." />
+                </div>
+                <table class="table table-striped table-hover mb-3">
+                    <thead>
+                        <tr>
+                            <th scope="col">단어</th>
+                            <th scope="col">의미</th>
+                            <th scope="col">추가된 날짜</th>
+                            <th scope="col">삭제</th>
+                        </tr>
+                    </thead>
+                    <tbody id="wordTableBody">
+                        <!-- 단어 목록이 여기 동적으로 추가됨 -->
+                    </tbody>
+                </table>
+                <nav>
+                    <ul
+                        class="pagination justify-content-center"
+                        id="pagination">
+                        <!-- 페이지네이션 버튼이 여기 동적으로 추가됨 -->
+                    </ul>
+                </nav>
+            </section>
+
+            <!-- 학습하기 섹션 -->
+            <section id="learn">
+                <h1><span class="engFont">Word Wise Web: </span> 학습하기</h1>
+                <hr />
+                <div class="card">
+                    <div class="card-body my-5 py-5">
+                        <figure class="text-center my-5 py-5">
+                            <blockquote class="blockquote" id="learnWordQuiz">
+                                랜덤으로 출력되는 의미를 보고 단어를 맞춰주세요.
+                            </blockquote>
+                            <figcaption
+                                class="blockquote-footer"
+                                id="learnWordExplain">
+                                저장된 횟수가 많을수록 더 자주 출력됩니다.
+                            </figcaption>
+                            <button
+                                class="btn btn-outline-primary"
+                                type="button"
+                                id="learnWordQuizBtn">
+                                문제 풀기
+                            </button>
+                        </figure>
+                    </div>
+                    <div class="card-footer">
+                        <div class="input-group">
+                            <span
+                                class="input-group-text"
+                                id="learnWordInputBox"
+                                >의미에 해당하는 단어를 입력하세요</span
+                            >
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="learnWordInput"
+                                aria-label="Sizing example input"
+                                aria-describedby="learnWordInput" />
+                            <button
+                                class="btn btn-outline-primary"
+                                type="button"
+                                id="learnWordBtn">
+                                입력
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 도움말 섹션 -->
+            <section id="help">
+                <h1><span class="engFont">Word Wise Web: </span> 도움말</h1>
+                <hr />
+                <!-- 기본 사용법 -->
+                <div class="card mb-3">
+                    <div class="card-header fw-bold">1. 기본 사용법</div>
+                    <div class="card-body">
+                        <ol>
+                            <li>
+                                <strong>단어 선택</strong>: 웹 페이지에서 모르는
+                                단어를 더블 클릭하거나 드래그하여 선택합니다.
+                            </li>
+                            <li>
+                                <strong>단어 저장</strong>: 선택한 단어 옆에
+                                나타나는 플로팅 아이콘을 클릭하면 단어가 개인
+                                단어장에 저장되며, 의미를 확인할 수 있습니다.
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- 주요 기능 -->
+                <div class="card mb-3">
+                    <div class="card-header fw-bold">2. 주요 기능</div>
+                    <div class="card-body">
+                        <h6>2.1 팝업 창</h6>
+                        <ul>
+                            <li>
+                                <strong>단어 추가</strong>: 직접 단어를 입력하여
+                                의미를 검색하고 저장할 수 있습니다.
+                            </li>
+                            <li>
+                                <strong>최근 단어</strong>: 최근에 저장한 단어
+                                목록을 확인할 수 있습니다.
+                            </li>
+                            <li>
+                                <strong>단어 관리</strong>: 저장된 단어를
+                                삭제하거나 수정할 수 있습니다.
+                            </li>
+                        </ul>
+                        <h6>2.2 옵션 페이지</h6>
+                        <ul>
+                            <li>
+                                <strong>단어장</strong>: 저장한 모든 단어를
+                                관리하고 학습할 수 있습니다.
+                            </li>
+                            <li>
+                                <strong>학습하기</strong>: 저장한 단어로 퀴즈를
+                                풀고 학습 진도를 확인할 수 있습니다.
+                            </li>
+                            <li>
+                                <strong>설정</strong>: 확장 프로그램의 동작을
+                                사용자 취향에 맞게 조정할 수 있습니다.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 고급 설정 -->
+                <div class="card mb-3">
+                    <div class="card-header fw-bold">3. 고급 설정</div>
+                    <div class="card-body">
+                        <ul>
+                            <li>
+                                <strong>API 키 설정</strong>: Google Gemini API
+                                키를 설정하여 정확한 단어 의미를 제공받을 수
+                                있습니다.
+                            </li>
+                            <li>
+                                <strong>플로팅 아이콘</strong>: 단어 선택 시
+                                나타나는 아이콘의 표시 여부를 설정할 수
+                                있습니다.
+                            </li>
+                            <li>
+                                <strong>예문 저장</strong>: 단어와 함께 예문을
+                                저장할지 설정할 수 있습니다.
+                            </li>
+                            <li>
+                                <strong>단어 하이라이트</strong>: 이미 저장한
+                                단어를 웹 페이지에서 하이라이트로 표시할 수
+                                있습니다.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- 문제 해결 -->
+                <div class="card mb-3">
+                    <div class="card-header fw-bold">4. 문제 해결</div>
+                    <div class="card-body">
+                        <dl>
+                            <dt>단어가 저장되지 않아요</dt>
+                            <dd>
+                                <ul>
+                                    <li>인터넷 연결을 확인해 주세요.</li>
+                                    <li>
+                                        API 키가 올바르게 설정되어 있는지 확인해
+                                        주세요.
+                                    </li>
+                                </ul>
+                            </dd>
+                            <dt>플로팅 아이콘이 나타나지 않아요</dt>
+                            <dd>
+                                <ul>
+                                    <li>
+                                        설정에서 플로팅 아이콘 표시 옵션이 켜져
+                                        있는지 확인해 주세요.
+                                    </li>
+                                    <li>페이지를 새로고침 해보세요.</li>
+                                </ul>
+                            </dd>
+                            <dt>의미가 정확하지 않아요</dt>
+                            <dd>
+                                <ul>
+                                    <li>
+                                        선택한 단어의 맥락을 고려하여 의미를
+                                        제공하고 있습니다. 다른 맥락에서 단어를
+                                        선택해 보세요.
+                                    </li>
+                                    <li>
+                                        API 키를 확인하고, 필요하다면 재설정해
+                                        보세요.
+                                    </li>
+                                </ul>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <!-- 피드백 및 지원 -->
+                <div class="card mb-3">
+                    <div class="card-header fw-bold">5. 피드백 및 지원</div>
+                    <div class="card-body">
+                        <p>Word Wise Web을 개선하는데 도움을 주세요!</p>
+                        <ul>
+                            <li>
+                                <strong>버그 리포트</strong>: 문제를
+                                발견하셨다면 자세한 내용과 함께 알려주세요.
+                            </li>
+                            <li>
+                                <strong>기능 제안</strong>: 새로운 아이디어가
+                                있으시다면 언제든 공유해 주세요.
+                            </li>
+                            <li>
+                                <strong>문의하기</strong>: 추가 도움이
+                                필요하시면 언제든 문의해 주세요.
+                            </li>
+                        </ul>
+                        <p>
+                            이메일:
+                            <a href="mailto:chic.igel@gmail.com"
+                                >chic.igel@gmail.com</a
+                            >
+                            <br />
+                            깃허브:
+                            <a
+                                href="https://github.com/Baristacus/WordWiseWeb"
+                                target="_blank"
+                                >WordWiseWeb</a
+                            >
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 프라이버시 정책 -->
+                <div class="card mb-3">
+                    <div class="card-header fw-bold">6. 프라이버시 정책</div>
+                    <div class="card-body">
+                        <p>
+                            사용자의 개인정보 보호를 중요하게 생각합니다. 단어
+                            학습 데이터는 로컬에 저장되며, API 요청 시 필요한
+                            최소한의 정보만을 사용합니다.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 일반 설정 섹션 -->
+            <section id="settings">
+                <h1><span class="engFont">Word Wise Web: </span> 설정</h1>
+                <hr />
+
+                <div class="card mb-3">
+                    <div class="card-header fw-bold">
+                        일반 설정
+                        <small class="fw-light text-danger"
+                            >설정 기능은 아직 구현되지 않았습니다.</small
+                        >
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3 form-check form-switch">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                id="floatingIconSwitch"
+                                checked />
+                            <label
+                                class="form-check-label"
+                                for="floatingIconSwitch"
+                                >플로팅 아이콘 표시</label
+                            >
+                        </div>
+                        <div class="mb-3 form-check form-switch">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                id="saveExampleSwitch" />
+                            <label
+                                class="form-check-label"
+                                for="saveExampleSwitch"
+                                >단어와 함께 예문도 함께 저장</label
+                            >
+                        </div>
+                        <div class="mb-3 form-check form-switch">
+                            <input
+                                class="form-check-input"
+                                type="checkbox"
+                                id="highlightSwitch" />
+                            <label
+                                class="form-check-label"
+                                for="highlightSwitch"
+                                >저장한 단어 형광펜으로 표시</label
+                            >
+                        </div>
+                    </div>
+                    <div class="card-footer d-grid">
+                        <button id="saveSettingsBtn" class="btn btn-success">
+                            설정 저장
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header fw-bold">
+                        API 설정
+                        <small class="text-warning fw-light"
+                            >API Key 발급:
+                            <a
+                                href="http://goo.gle/aistudio-korea-YT"
+                                target="_blank"
+                                >http://goo.gle/aistudio-korea-YT</a
+                            ></small
+                        >
+                    </div>
+                    <div class="card-body">
+                        <div class="input-group">
+                            <span class="input-group-text" id="apiKeyFormLabel"
+                                >Google API Key</span
+                            >
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="apiKeyInput"
+                                aria-label="Google Gemini API Key 입력"
+                                aria-describedby="apiKeyFormLabel"
+                                placeholder="Google Gemini API Key 입력" />
+                            <button
+                                class="btn btn-primary"
+                                type="button"
+                                id="apiKeySaveBtn">
+                                저장
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 정보 섹션 -->
+            <section id="about">
+                <h1><span class="engFont">Word Wise Web: </span> 정보</h1>
+                <hr />
+                <div class="card">
+                    <div class="card-body">
+                        <p>Word Wise Web Extension 버전: 0.0.1</p>
+                        <p>개발자: Baristacus, Koho, Sydneyskim</p>
+                        <p>
+                            깃허브:
+                            <a
+                                href="https://github.com/Baristacus/WordWiseWeb"
+                                target="_blank"
+                                >WordWiseWeb</a
+                            >
+                        </p>
+                    </div>
+
+                    <div class="card-footer text-muted">
+                        <i class="bi bi-database"></i>
+                        <span id="dbSize">로딩 중...</span> /
+                        <span id="dbUsagePercentage">로딩 중...</span> 사용중
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <script src="options.js"></script>
+        <script src="../libs/bootstrap.bundle.min.js"></script>
+    </body>
+</html>

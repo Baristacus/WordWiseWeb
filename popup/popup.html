@@ -4,26 +4,86 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Word Wise Web</title>
-        <script src="../lib/marked.min.js"></script>
-        <script src="../lib/purify.min.js"></script>
+        <link rel="stylesheet" href="../libs/bootstrap.min.css" />
+        <link
+            rel="stylesheet"
+            href="../fonts/Bootstrap-icons/bootstrap-icons.min.css" />
         <link rel="stylesheet" href="popup.css" />
     </head>
     <body>
-        <header class="app-header">
-            <div class="header-content">
-                <img
-                    src="../assets/icons/icon48.png"
-                    alt="AI 단어 학습 도우미 아이콘"
-                    class="app-icon" />
-                <h1 class="app-title">AI 단어 학습 도우미</h1>
-            </div>
-        </header>
-        <hr />
-        <main>
-            <h2>저장된 단어 목록</h2>
-            <div id="word-list"></div>
-        </main>
-        <div id="toast-message" class="toast-message"></div>
+        <div class="container-fluid">
+            <header class="row py-2 mb-3 border-bottom text-primary">
+                <div class="col">
+                    <img src="../images/icon-32.png" alt="Word Wise Web 로고" />
+                    <span class="h5 align-middle fw-bold engFont"
+                        >Word Wise Web</span
+                    >
+                </div>
+                <div class="col-auto">
+                    <button
+                        class="btn btn-light btn-sm"
+                        id="userProfileBtn"
+                        disabled>
+                        <i class="bi bi-person-circle"></i>
+                    </button>
+                    <button class="btn btn-light btn-sm" id="learnBtn">
+                        <i class="bi bi-book"></i>
+                    </button>
+                    <button class="btn btn-light btn-sm" id="settingsBtn">
+                        <i class="bi bi-gear-fill"></i>
+                    </button>
+                </div>
+            </header>
+
+            <main class="mb-3">
+                <div class="input-group mb-3">
+                    <input
+                        type="text"
+                        class="form-control"
+                        placeholder="단어 직접 추가"
+                        aria-label="단어 직접 추가"
+                        aria-describedby="addWordBtn" />
+                    <button
+                        class="btn btn-outline-primary"
+                        type="button"
+                        id="addWordBtn">
+                        <i class="bi bi-bookmark-plus-fill"></i> 추가
+                    </button>
+                </div>
+                <div
+                    id="apiKeyMessage"
+                    class="alert alert-danger"
+                    style="display: none"></div>
+
+                <hr />
+
+                <div class="accordion" id="recentWordsAccordion">
+                    <!-- 최근 저장한 단어들이 여기에 동적으로 추가 -->
+                </div>
+
+                <hr />
+
+                <div class="d-grid">
+                    <button class="btn btn-primary" id="wordListBtn">
+                        <i class="bi bi-journal-bookmark-fill"></i> 저장된 단어
+                        전체 보기
+                    </button>
+                </div>
+            </main>
+
+            <footer class="row py-2 border-top small">
+                <div class="col">
+                    <!-- 프리미엄 남은 기간: <span id="premiumDays">0</span>일 -->
+                    <span id="premiumDays" class="text-white"></span>
+                </div>
+                <div class="col-auto">
+                    저장된 단어 수:
+                    <span id="wordCount" class="fs-6 fw-bold">0</span>개
+                </div>
+            </footer>
+        </div>
+        <script src="../background.js"></script>
         <script src="popup.js"></script>
+        <script src="../libs/bootstrap.bundle.min.js"></script>
     </body>
 </html>
