@@ -75,6 +75,13 @@
             <section id="wordList">
                 <h1><span class="engFont">Word Wise Web: </span> 단어장</h1>
                 <hr />
+                <div class="mb-3">
+                    <input
+                        type="text"
+                        id="wordSearchInput"
+                        class="form-control"
+                        placeholder="단어 검색..." />
+                </div>
                 <table class="table table-striped table-hover mb-3">
                     <thead>
                         <tr>
@@ -107,7 +114,9 @@
                             <blockquote class="blockquote" id="learnWordQuiz">
                                 랜덤으로 출력되는 의미를 보고 단어를 맞춰주세요.
                             </blockquote>
-                            <figcaption class="blockquote-footer" id="learnWordExplain">
+                            <figcaption
+                                class="blockquote-footer"
+                                id="learnWordExplain">
                                 저장된 횟수가 많을수록 더 자주 출력됩니다.
                             </figcaption>
                             <button
@@ -120,7 +129,9 @@
                     </div>
                     <div class="card-footer">
                         <div class="input-group">
-                            <span class="input-group-text" id="learnWordInputBox"
+                            <span
+                                class="input-group-text"
+                                id="learnWordInputBox"
                                 >의미에 해당하는 단어를 입력하세요</span
                             >
                             <input

@@ -5,14 +5,14 @@ const floatingIconSwitch = document.getElementById('floatingIconSwitch');
 const saveExampleSwitch = document.getElementById('saveExampleSwitch');
 const highlightSwitch = document.getElementById('highlightSwitch');
 const saveSettingsBtn = document.getElementById('saveSettingsBtn');
-
-// 단어장 섹션에 필요한 요소 선택
+const wordSearchInput = document.getElementById('wordSearchInput');
 const wordTableBody = document.getElementById('wordTableBody');
 const pagination = document.getElementById('pagination');
 
 let currentPage = 1;
 const itemsPerPage = 15;
 let words = [];
+let filteredWords = [];
 
 // 날짜 포맷팅 함수 추가
 function formatDate(dateString) {
@@ -24,13 +24,13 @@ function formatDate(dateString) {
 function displayWordList() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const paginatedWords = words.slice(startIndex, endIndex);
+    const paginatedWords = filteredWords.slice(startIndex, endIndex);
 
     wordTableBody.innerHTML = '';
 
     if (paginatedWords.length === 0) {
         const emptyRow = document.createElement('tr');
-        emptyRow.innerHTML = '<td colspan="4" class="text-center">저장된 단어가 없습니다.</td>';
+        emptyRow.innerHTML = '<td colspan="4" class="text-center">표시할 단어가 없습니다.</td>';
         wordTableBody.appendChild(emptyRow);
     } else {
         paginatedWords.forEach(word => {
@@ -165,7 +165,7 @@ function displayPagination() {
 async function fetchWordList() {
     try {
         console.log('fetchWordList called');
-        const response = await sendMessageToBackground({ action: 'getRecentWords', limit: Infinity }); // 전체 단어 목록을 가져오기 위해 limit을 무한대로 설정
+        const response = await sendMessageToBackground({ action: 'getRecentWords', limit: Infinity });
 
         console.log('Response received:', response);
         if (!response || !response.success) {
@@ -173,6 +173,7 @@ async function fetchWordList() {
         }
 
         words = response.words;
+        filteredWords = [...words]; // 초기에 모든 단어를 필터링된 목록에 추가
         displayWordList();
     } catch (error) {
         console.error('단어 목록 표시 중 오류 발생:', error);
@@ -181,6 +182,17 @@ async function fetchWordList() {
         wordTableBody.innerHTML = '';
         wordTableBody.appendChild(errorRow);
     }
+}
+
+// 검색 기능 구현
+function searchWords(query) {
+    query = query.toLowerCase();
+    filteredWords = words.filter(word =>
+        word.term.toLowerCase().includes(query) ||
+        word.definition.toLowerCase().includes(query)
+    );
+    currentPage = 1; // 검색 시 첫 페이지로 이동
+    displayWordList();
 }
 
 // 단어 삭제 처리 함수
@@ -205,6 +217,11 @@ async function handleDeleteWord(word) {
 // 페이지 로드 시 단어 목록 표시
 document.addEventListener('DOMContentLoaded', async () => {
     await fetchWordList();
+
+    // 검색 입력 필드에 이벤트 리스너 추가
+    wordSearchInput.addEventListener('input', (e) => {
+        searchWords(e.target.value);
+    });
 });
 
 // 단어 삭제 버튼 이벤트 리스너
@@ -214,8 +231,6 @@ wordTableBody.addEventListener('click', (event) => {
         handleDeleteWord(word);
     }
 });
-
-
 
 // 학습하기 기능을 위한 DOM 요소
 const learnWordQuiz = document.getElementById('learnWordQuiz');
@@ -242,7 +257,7 @@ learnWordBtn.addEventListener('click', () => {
         checkAnswer();
     }
 });
-learnWordInput.addEventListener('keypress', function(event) {
+learnWordInput.addEventListener('keypress', function (event) {
     if (event.key === 'Enter' && !isCorrected) {
         checkAnswer();
     }
@@ -252,7 +267,7 @@ learnWordInput.addEventListener('keypress', function(event) {
 function getWeightedRandomItem(list, weightKey) {
     const totalWeight = list.reduce((sum, item) => sum + item[weightKey], 0);
     let randomWeight = Math.random() * totalWeight;
-    
+
     for (let item of list) {
         randomWeight -= item[weightKey];
         if (randomWeight <= 0) {
@@ -260,7 +275,6 @@ function getWeightedRandomItem(list, weightKey) {
         }
     }
 }
-
 
 // 학습하기 문제 세팅 - 단어 목록을 가져와 퀴즈 띄움
 async function setQuiz() {
@@ -280,7 +294,7 @@ async function setQuiz() {
 
         const wordLists = response.words;
 
-        if(wordLists.length === 0) {
+        if (wordLists.length === 0) {
             console.log('저장된 단어가 없습니다.');
         } else {
             wordForQuiz = getWeightedRandomItem(wordLists, 'count');
@@ -290,7 +304,7 @@ async function setQuiz() {
         }
     } catch (error) {
         console.error('단어 목록 받아오는 중 중 오류 발생:', error);
-    }  
+    }
 }
 
 // 학습하기 문제 정답 확인
@@ -311,11 +325,8 @@ function checkAnswer() {
             learnWordInputBox.classList.add("border-danger");
             console.log('오답입니다');
         }
-    } 
+    }
 }
-
-
-
 
 // API 키 저장 함수
 function saveApiKey(apiKey) {
