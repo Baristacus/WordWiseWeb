@@ -82,7 +82,7 @@ async function callGeminiAPI(word, context) {
         '문맥': ${context}
 
         '텍스트'의 의미가 여러 개라면 '문맥'의 맥락을 파악해서 '문맥' 속에 사용된 의미로 대답해줘.
-        그리고 '문맥'에서 사용된 표현을 그대로 사용하면 안 돼.
+        그리고 의미에 '텍스트'를 직접 언급하거나 '문맥'에서 사용된 표현을 그대로 사용하면 안 돼.
 
         예문은 '텍스트'를 활용한 문장을 하나 작성해줘.
         '텍스트'가 반드시 포함된 문장이어야 하며, 의미를 정확하게 반영하는 예문이어야 해.
@@ -96,6 +96,7 @@ async function callGeminiAPI(word, context) {
         의미는 반드시 정확한 사전적 의미를 가져야해.
         의미는 반드시 명사 또는 ~음, ~함 등의 명사형 어미로 끝나야 하고 절대 NEVER ~이다., ~하다. 등 서술형으로 끝나면 안 돼.
         예문은 ~입니다., ~합니다. 등의 존댓말이 아니라 ~다., ~이다. 등의 평서형 어미로 끝나도록 답변해줘.
+        그리고 응답에 마크다운이나 HTML코드를 절대 포함하지 마.
 
         반드시 응답 형식을 지켜서 답변해야 해.
     `;
@@ -163,23 +164,48 @@ async function saveWord(word, definition, example) {
         const transaction = db.transaction(['words'], 'readwrite');
         const store = transaction.objectStore('words');
 
-        const newWord = {
-            term: word,
-            definition: definition,
-            example: example,
-            addedDate: new Date().toISOString()
-        };
+        // 이전에 저장된 단어인지 확인
+        const getRequest = store.get(word);
 
-        const request = store.put(newWord);
+        getRequest.onsuccess = function(event) {
+            let newWord;
+            if (event.target.result) {
+                // 기존 단어가 있으면 카운트를 증가시키고 날짜 갱신
+                newWord = event.target.result;
+                newWord.count = (newWord.count || 1) + 1;
+                newWord.addedDate = new Date().toISOString();
 
-        request.onerror = (event) => {
-            console.error('단어 저장 중 오류 발생:', event.target.error);
-            reject(new Error('단어 저장 중 오류가 발생했습니다.'));
-        };
+                // 새 정의와 예문으로 업데이트 - 추후 동음이의어 등 구분 예정
+                if (definition) newWord.definition = definition;
+                if (example) newWord.example = example;
+            } else {
+                // 새로운 단어면 추가
+                newWord = {
+                    term: word,
+                    definition: definition,
+                    example: example,
+                    addedDate: new Date().toISOString(),
+                    count: 1
+                };
+            }
 
-        request.onsuccess = (event) => {
-            console.log('단어가 성공적으로 저장되었습니다:', word);
+            // 새 데이터 저장
+            const putRequest = store.put(newWord)
+
+            putRequest.onerror = function(evnet) {
+                console.error('단어 저장 중 오류 발생:', event.target.error);
+                reject(new Error('단어 저장 중 오류가 발생했습니다.'));
+            };
+
+            putRequest.onsuccess = function(event) {
+                console.log('단어가 성공적으로 저장되었습니다:', word);
             resolve(newWord);
+            };
+        };
+
+        getRequest.onerror = (event) => {
+            console.error('단어 조회 중 오류 발생:', event.target.error);
+            reject(new Error('단어 조회 중 오류가 발생했습니다.'));
         };
     });
 }

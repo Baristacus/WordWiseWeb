@@ -21,12 +21,20 @@ function createWordItem(word, index) {
     const accordionItem = document.createElement('div');
     accordionItem.className = 'accordion-item';
 
+    // 단어 중복 저장 횟수에 따라 글자 색상 변경
+    let countClass = ''
+    if (word.count >=3) {
+        countClass = "text-danger fw-bold";
+    } else if (word.count == 2) {
+        countClass = "text-warning fw-medium";
+    } ;
+
     accordionItem.innerHTML = `
         <h2 class="accordion-header" id="heading${index}">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
                     data-bs-target="#collapse${index}" aria-expanded="false" 
                     aria-controls="collapse${index}">
-                ${word.term} 
+                <span class="${countClass}">${word.term}</span>
                 <small class="text-muted ms-2">(${formatDate(word.addedDate)})</small>
             </button>
         </h2>
