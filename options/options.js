@@ -6,6 +6,82 @@ const saveExampleSwitch = document.getElementById('saveExampleSwitch');
 const highlightSwitch = document.getElementById('highlightSwitch');
 const saveSettingsBtn = document.getElementById('saveSettingsBtn');
 
+// 단어장 섹션에 필요한 요소 선택
+const wordTableBody = document.getElementById('wordTableBody');
+
+// 날짜 포맷팅 함수 추가
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+// 단어 목록을 가져와서 테이블에 표시하는 함수
+async function displayWordList() {
+    try {
+        const response = await sendMessageToBackground({ action: 'getRecentWords', limit: Infinity }); // 전체 단어 목록을 가져오기 위해 limit을 무한대로 설정
+        
+        if (!response || !response.success) {
+            throw new Error(response ? response.error : '응답이 없습니다.');
+        }
+
+        const words = response.words;
+        wordTableBody.innerHTML = '';
+
+        if (words.length === 0) {
+            const emptyRow = document.createElement('tr');
+            emptyRow.innerHTML = '<td colspan="4" class="text-center">저장된 단어가 없습니다.</td>';
+            wordTableBody.appendChild(emptyRow);
+        } else {
+            words.forEach((word, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${word.term}</td>
+                    <td>${word.definition}</td>
+                    <td>${formatDate(word.addedDate)}</td>
+                    <td><button class="btn btn-sm btn-danger delete-word-btn" data-word="${word.term}">삭제</button></td>
+                `;
+                wordTableBody.appendChild(row);
+            });
+        }
+    } catch (error) {
+        console.error('단어 목록 표시 중 오류 발생:', error);
+        const errorRow = document.createElement('tr');
+        errorRow.innerHTML = `<td colspan="4" class="text-center text-danger">오류: ${error.message}</td>`;
+        wordTableBody.innerHTML = '';
+        wordTableBody.appendChild(errorRow);
+    }
+}
+
+// 단어 삭제 처리 함수
+async function handleDeleteWord(word) {
+    try {
+        const response = await sendMessageToBackground({ action: 'deleteWord', word: word });
+
+        if (!response.success) {
+            throw new Error(response.error || '단어 삭제에 실패했습니다.');
+        }
+
+        await displayWordList();
+        showNotification('단어가 성공적으로 삭제되었습니다!');
+    } catch (error) {
+        console.error('단어 삭제 중 오류 발생:', error);
+        showNotification(error.message || '단어 삭제 중 오류가 발생했습니다.', 'error');
+    }
+}
+
+// 페이지 로드 시 단어 목록 표시
+document.addEventListener('DOMContentLoaded', async () => {
+    await displayWordList();
+});
+
+// 단어 삭제 버튼 이벤트 리스너
+wordTableBody.addEventListener('click', (event) => {
+    if (event.target.classList.contains('delete-word-btn')) {
+        const word = event.target.dataset.word;
+        handleDeleteWord(word);
+    }
+});
+
 // API 키 저장 함수
 function saveApiKey(apiKey) {
     return new Promise((resolve, reject) => {
