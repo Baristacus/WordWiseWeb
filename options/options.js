@@ -8,6 +8,11 @@ const saveSettingsBtn = document.getElementById('saveSettingsBtn');
 
 // 단어장 섹션에 필요한 요소 선택
 const wordTableBody = document.getElementById('wordTableBody');
+const pagination = document.getElementById('pagination');
+
+let currentPage = 1;
+const itemsPerPage = 15;
+let words = [];
 
 // 날짜 포맷팅 함수 추가
 function formatDate(dateString) {
@@ -15,34 +20,160 @@ function formatDate(dateString) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-// 단어 목록을 가져와서 테이블에 표시하는 함수
-async function displayWordList() {
+// 단어 목록을 페이지네이션에 맞게 표시하는 함수
+function displayWordList() {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedWords = words.slice(startIndex, endIndex);
+
+    wordTableBody.innerHTML = '';
+
+    if (paginatedWords.length === 0) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = '<td colspan="4" class="text-center">저장된 단어가 없습니다.</td>';
+        wordTableBody.appendChild(emptyRow);
+    } else {
+        paginatedWords.forEach(word => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${word.term}</td>
+                <td>${word.definition}</td>
+                <td>${formatDate(word.addedDate)}</td>
+                <td><button class="btn btn-sm btn-primary delete-word-btn" data-word="${word.term}">삭제</button></td>
+            `;
+            wordTableBody.appendChild(row);
+        });
+    }
+
+    displayPagination();
+}
+
+// 페이지네이션 버튼을 표시하는 함수
+function displayPagination() {
+    const pageCount = Math.ceil(words.length / itemsPerPage);
+    const paginationRange = 2; // 현재 페이지를 중심으로 표시할 페이지 버튼의 범위
+    pagination.innerHTML = '';
+
+    // 처음 페이지 버튼
+    if (currentPage > 1) {
+        const firstPageItem = document.createElement('li');
+        firstPageItem.className = 'page-item';
+        firstPageItem.innerHTML = `<a class="page-link" href="#">처음</a>`;
+        firstPageItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentPage = 1;
+            displayWordList();
+        });
+        pagination.appendChild(firstPageItem);
+    }
+
+    // 이전 페이지 버튼
+    if (currentPage > 1) {
+        const prevPageItem = document.createElement('li');
+        prevPageItem.className = 'page-item';
+        prevPageItem.innerHTML = `<a class="page-link" href="#">이전</a>`;
+        prevPageItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentPage--;
+            displayWordList();
+        });
+        pagination.appendChild(prevPageItem);
+    }
+
+    // 페이지 번호 버튼
+    const startPage = Math.max(1, currentPage - paginationRange);
+    const endPage = Math.min(pageCount, currentPage + paginationRange);
+
+    if (startPage > 1) {
+        const pageItem = document.createElement('li');
+        pageItem.className = 'page-item';
+        pageItem.innerHTML = `<a class="page-link" href="#">1</a>`;
+        pageItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentPage = 1;
+            displayWordList();
+        });
+        pagination.appendChild(pageItem);
+
+        if (startPage > 2) {
+            const dotsItem = document.createElement('li');
+            dotsItem.className = 'page-item disabled';
+            dotsItem.innerHTML = `<a class="page-link" href="#">...</a>`;
+            pagination.appendChild(dotsItem);
+        }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+        const pageItem = document.createElement('li');
+        pageItem.className = `page-item ${i === currentPage ? 'active' : ''}`;
+        pageItem.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+        pageItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentPage = i;
+            displayWordList();
+        });
+        pagination.appendChild(pageItem);
+    }
+
+    if (endPage < pageCount) {
+        if (endPage < pageCount - 1) {
+            const dotsItem = document.createElement('li');
+            dotsItem.className = 'page-item disabled';
+            dotsItem.innerHTML = `<a class="page-link" href="#">...</a>`;
+            pagination.appendChild(dotsItem);
+        }
+
+        const pageItem = document.createElement('li');
+        pageItem.className = 'page-item';
+        pageItem.innerHTML = `<a class="page-link" href="#">${pageCount}</a>`;
+        pageItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentPage = pageCount;
+            displayWordList();
+        });
+        pagination.appendChild(pageItem);
+    }
+
+    // 다음 페이지 버튼
+    if (currentPage < pageCount) {
+        const nextPageItem = document.createElement('li');
+        nextPageItem.className = 'page-item';
+        nextPageItem.innerHTML = `<a class="page-link" href="#">다음</a>`;
+        nextPageItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentPage++;
+            displayWordList();
+        });
+        pagination.appendChild(nextPageItem);
+    }
+
+    // 마지막 페이지 버튼
+    if (currentPage < pageCount) {
+        const lastPageItem = document.createElement('li');
+        lastPageItem.className = 'page-item';
+        lastPageItem.innerHTML = `<a class="page-link" href="#">마지막</a>`;
+        lastPageItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            currentPage = pageCount;
+            displayWordList();
+        });
+        pagination.appendChild(lastPageItem);
+    }
+}
+
+// 단어 목록을 가져오는 함수
+async function fetchWordList() {
     try {
+        console.log('fetchWordList called');
         const response = await sendMessageToBackground({ action: 'getRecentWords', limit: Infinity }); // 전체 단어 목록을 가져오기 위해 limit을 무한대로 설정
-        
+
+        console.log('Response received:', response);
         if (!response || !response.success) {
             throw new Error(response ? response.error : '응답이 없습니다.');
         }
 
-        const words = response.words;
-        wordTableBody.innerHTML = '';
-
-        if (words.length === 0) {
-            const emptyRow = document.createElement('tr');
-            emptyRow.innerHTML = '<td colspan="4" class="text-center">저장된 단어가 없습니다.</td>';
-            wordTableBody.appendChild(emptyRow);
-        } else {
-            words.forEach((word, index) => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${word.term}</td>
-                    <td>${word.definition}</td>
-                    <td>${formatDate(word.addedDate)}</td>
-                    <td><button class="btn btn-sm btn-danger delete-word-btn" data-word="${word.term}">삭제</button></td>
-                `;
-                wordTableBody.appendChild(row);
-            });
-        }
+        words = response.words;
+        displayWordList();
     } catch (error) {
         console.error('단어 목록 표시 중 오류 발생:', error);
         const errorRow = document.createElement('tr');
@@ -54,24 +185,26 @@ async function displayWordList() {
 
 // 단어 삭제 처리 함수
 async function handleDeleteWord(word) {
-    try {
-        const response = await sendMessageToBackground({ action: 'deleteWord', word: word });
+    if (confirm('단어장에서 단어를 삭제하시겠습니까?')) {
+        try {
+            const response = await sendMessageToBackground({ action: 'deleteWord', word: word });
 
-        if (!response.success) {
-            throw new Error(response.error || '단어 삭제에 실패했습니다.');
+            if (!response.success) {
+                throw new Error(response.error || '단어 삭제에 실패했습니다.');
+            }
+
+            await fetchWordList();
+            showNotification('단어가 성공적으로 삭제되었습니다!');
+        } catch (error) {
+            console.error('단어 삭제 중 오류 발생:', error);
+            showNotification(error.message || '단어 삭제 중 오류가 발생했습니다.', 'error');
         }
-
-        await displayWordList();
-        showNotification('단어가 성공적으로 삭제되었습니다!');
-    } catch (error) {
-        console.error('단어 삭제 중 오류 발생:', error);
-        showNotification(error.message || '단어 삭제 중 오류가 발생했습니다.', 'error');
     }
 }
 
 // 페이지 로드 시 단어 목록 표시
 document.addEventListener('DOMContentLoaded', async () => {
-    await displayWordList();
+    await fetchWordList();
 });
 
 // 단어 삭제 버튼 이벤트 리스너
@@ -81,6 +214,7 @@ wordTableBody.addEventListener('click', (event) => {
         handleDeleteWord(word);
     }
 });
+
 
 // API 키 저장 함수
 function saveApiKey(apiKey) {
