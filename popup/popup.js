@@ -43,71 +43,159 @@ function createWordItem(word, index) {
 
 // 최근 저장한 단어 목록을 가져와 아코디언으로 표시하는 함수
 async function displayRecentWords() {
-    const recentWords = await getRecentWords();
-    const wordCount = await getWordCount();
-    recentWordsAccordion.innerHTML = '';
+    try {
+        const response = await sendMessageToBackground({ action: 'getRecentWords' });
 
-    if (recentWords.length === 0) {
-        // 저장된 단어가 없을 경우 메시지 표시
-        const emptyStateMessage = document.createElement('div');
-        emptyStateMessage.className = 'alert alert-info text-center';
-        emptyStateMessage.textContent = '저장된 단어가 없습니다.';
-        recentWordsAccordion.appendChild(emptyStateMessage);
-    } else {
-        // 최대 3개까지 표시
-        const displayCount = Math.min(recentWords.length, 3);
-        for (let i = 0; i < displayCount; i++) {
-            // console.log(`단어 아이템 생성 (${i + 1}/${displayCount}):`, recentWords[i].term);
-            const wordItem = createWordItem(recentWords[i], i);
-            recentWordsAccordion.appendChild(wordItem);
+        if (!response || !response.success) {
+            throw new Error(response ? response.error : '응답이 없습니다.');
         }
-    }
 
-    // 단어 수 업데이트
-    wordCountSpan.textContent = wordCount;
+        const recentWords = response.words;
+        recentWordsAccordion.innerHTML = '';
+
+        if (recentWords.length === 0) {
+            const emptyStateMessage = document.createElement('div');
+            emptyStateMessage.className = 'alert alert-info text-center';
+            emptyStateMessage.textContent = '저장된 단어가 없습니다.';
+            recentWordsAccordion.appendChild(emptyStateMessage);
+        } else {
+            const displayCount = Math.min(recentWords.length, 3);
+            for (let i = 0; i < displayCount; i++) {
+                const wordItem = createWordItem(recentWords[i], i);
+                recentWordsAccordion.appendChild(wordItem);
+            }
+        }
+
+        await updateWordCount();
+    } catch (error) {
+        console.error('단어 목록 표시 중 오류 발생:', error);
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'alert alert-danger text-center';
+        errorMessage.textContent = `오류: ${error.message}`;
+        recentWordsAccordion.innerHTML = '';
+        recentWordsAccordion.appendChild(errorMessage);
+    }
 }
 
-// 저장된 단어 수를 가져와 표시하는 함수
-async function getWordCount() {
-    return new Promise((resolve) => {
-        chrome.storage.sync.get(['recentWords'], function (result) {
-            let recentWords = result.recentWords || [];
-            resolve(recentWords.length);
-        });
-    });
+// 단어 수 업데이트 함수
+async function updateWordCount() {
+    try {
+        const response = await sendMessageToBackground({ action: 'getWordCount' });
+
+        if (response && response.success) {
+            wordCountSpan.textContent = response.count;
+            console.log('업데이트된 단어 수:', response.count);
+        } else {
+            throw new Error(response ? response.error : '단어 수를 가져오는데 실패했습니다.');
+        }
+    } catch (error) {
+        console.error('단어 수 업데이트 중 오류 발생:', error);
+        wordCountSpan.textContent = '오류';
+    }
 }
 
 // 프리미엄 남은 기간을 가져오는 함수
-function getPremiumDays() {
-    return new Promise((resolve) => {
-        chrome.storage.sync.get(['premiumDays'], function (result) {
-            resolve(result.premiumDays || 0);
-        });
-    });
+async function getPremiumDays() {
+    try {
+        const response = await sendMessageToBackground({ action: 'getPremiumDays' });
+
+        if (response && response.success) {
+            return response.days;
+        } else {
+            throw new Error(response ? response.error : '프리미엄 기간을 가져오는데 실패했습니다.');
+        }
+    } catch (error) {
+        console.error('프리미엄 기간 가져오기 중 오류 발생:', error);
+        return 0;
+    }
 }
 
 // 단어 저장 처리 함수
 async function handleSaveWord(word) {
     try {
-        const { definition, example } = await callGeminiAPI(word);
-        await saveWord(word, definition, example);
+        // 기본 컨텍스트 제공
+        const context = `The word "${word}" is being added directly from the popup.`;
+
+        const definitionResponse = await sendMessageToBackground({
+            action: 'getDefinition',
+            word: word,
+            context: context
+        });
+
+        if (!definitionResponse.success) {
+            throw new Error(definitionResponse.error || '단어 정의를 가져오는데 실패했습니다.');
+        }
+
+        const saveResponse = await sendMessageToBackground({
+            action: 'saveWord',
+            word: word,
+            definition: definitionResponse.definition,
+            example: definitionResponse.example
+        });
+
+        if (!saveResponse.success) {
+            throw new Error(saveResponse.error || '단어 저장에 실패했습니다.');
+        }
+
         await displayRecentWords();
         wordInput.value = ''; // 입력 필드 초기화
-        alert('단어가 성공적으로 추가되었습니다!');
+        showNotification('단어가 성공적으로 추가되었습니다!');
     } catch (error) {
-        alert(error.message || '단어 저장 중 오류가 발생했습니다.');
+        console.error('단어 저장 중 오류 발생:', error);
+        showNotification(error.message || '단어 저장 중 오류가 발생했습니다.', 'error');
     }
 }
 
 // 단어 삭제 처리 함수
 async function handleDeleteWord(word) {
     try {
-        await deleteWord(word);
+        const response = await sendMessageToBackground({ action: 'deleteWord', word: word });
+
+        if (!response.success) {
+            throw new Error(response.error || '단어 삭제에 실패했습니다.');
+        }
+
         await displayRecentWords();
-        alert('단어가 성공적으로 삭제되었습니다!');
+        showNotification('단어가 성공적으로 삭제되었습니다!');
     } catch (error) {
-        alert(error.message || '단어 삭제 중 오류가 발생했습니다.');
+        console.error('단어 삭제 중 오류 발생:', error);
+        showNotification(error.message || '단어 삭제 중 오류가 발생했습니다.', 'error');
     }
+}
+
+// 알림 표시 함수
+function showNotification(message, type = 'info') {
+    const container = document.querySelector('.container-fluid');
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} mt-3`;
+    notification.style.cssText = `
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        z-index: 1050;
+        padding: 10px;
+        font-size: 14px;
+        text-align: center;
+    `;
+    notification.textContent = message;
+    container.appendChild(notification);
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+// 배경 스크립트로 메시지를 보내는 함수
+function sendMessageToBackground(message) {
+    return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(message, response => {
+            if (chrome.runtime.lastError) {
+                reject(new Error(chrome.runtime.lastError.message));
+            } else {
+                resolve(response);
+            }
+        });
+    });
 }
 
 // 이벤트 리스너 등록
@@ -128,7 +216,7 @@ addWordBtn.addEventListener('click', () => {
     if (word) {
         handleSaveWord(word);
     } else {
-        alert('단어를 입력해주세요.');
+        showNotification('단어를 입력해주세요.', 'warning');
     }
 });
 
@@ -140,7 +228,7 @@ wordInput.addEventListener('keypress', (e) => {
 
 learnBtn.addEventListener('click', () => {
     // TODO: 학습 기능 구현
-    alert('학습 기능은 아직 구현되지 않았습니다.');
+    showNotification('학습 기능은 아직 구현되지 않았습니다.', 'info');
 });
 
 // 페이지 로드 시 초기화

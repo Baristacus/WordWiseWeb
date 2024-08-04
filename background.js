@@ -1,21 +1,70 @@
+// IndexedDB 초기화
+let db;
+
+function initDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open('WordWiseWebDB', 1);
+
+        request.onerror = (event) => {
+            console.error('IndexedDB 열기 실패:', event.target.error);
+            reject('IndexedDB 열기 실패');
+        };
+
+        request.onsuccess = (event) => {
+            db = event.target.result;
+            console.log('IndexedDB 연결 성공');
+            resolve(db);
+        };
+
+        request.onupgradeneeded = (event) => {
+            db = event.target.result;
+            const objectStore = db.createObjectStore('words', { keyPath: 'term' });
+            objectStore.createIndex('addedDate', 'addedDate', { unique: false });
+            console.log('IndexedDB 스키마 업그레이드 완료');
+        };
+    });
+}
+
 // Gemini API 키와 URL
 let API_KEY = '';
 const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
 
 // 저장된 API 키 가져오기
-chrome.storage.sync.get(['apiKey'], result => {
-    if (result.apiKey) {
-        API_KEY = result.apiKey;
+async function loadApiKey() {
+    return new Promise((resolve) => {
+        chrome.storage.sync.get(['apiKey'], result => {
+            API_KEY = result.apiKey || '';
+            console.log(API_KEY ? 'API 키 로드됨' : '저장된 API 키가 없음');
+            resolve(API_KEY);
+        });
+    });
+}
+
+// 초기화 함수
+async function initialize() {
+    try {
+        await initDB();
+        await loadApiKey();
+        console.log('초기화 완료');
+    } catch (error) {
+        console.error('초기화 실패:', error);
     }
-});
+}
+
+// 확장 프로그램 설치 또는 업데이트 시 초기화
+chrome.runtime.onInstalled.addListener(initialize);
+
+// 초기 API 키 로드
+loadApiKey();
 
 // Gemini API를 사용하여 단어 의미 가져오기
-async function callGeminiAPI(word, context, isRetry = false) {
-    if (!API_KEY && isRetry) {
-        console.log("▶▶▶▶API_KEY를 받아오지 못해서 재실행");
-        return callGeminiAPI(word, context, ture);
-    } else if (!API_KEY && isRetry) {
-        throw new Error('등록된 API_KEY가 없습니다.');
+async function callGeminiAPI(word, context) {
+    if (!API_KEY) {
+        await loadApiKey();
+    }
+
+    if (!API_KEY) {
+        throw new Error('등록된 API_KEY가 없습니다. 옵션 페이지에서 API 키를 설정해주세요.');
     }
 
     const prompt = `
@@ -96,88 +145,113 @@ async function callGeminiAPI(word, context, isRetry = false) {
     }
 }
 
-/// 단어 저장 함수
-function saveWord(word, definition, example) {
+// 단어 저장 함수
+async function saveWord(word, definition, example) {
+    if (!db) {
+        await initDB();
+    }
+
     return new Promise((resolve, reject) => {
-        chrome.storage.sync.get(['recentWords', 'wordCount'], function (result) {
-            let recentWords = result.recentWords || [];
-            let wordCount = result.wordCount || 0;
+        const transaction = db.transaction(['words'], 'readwrite');
+        const store = transaction.objectStore('words');
 
-            console.log('현재 저장된 단어 수:', wordCount);
-            console.log('새로 저장할 단어:', word);
+        const newWord = {
+            term: word,
+            definition: definition,
+            example: example,
+            addedDate: new Date().toISOString()
+        };
 
-            const newWord = {
-                term: word,
-                definition,
-                example,
-                addedDate: new Date().toISOString()
-            };
+        const request = store.put(newWord);
 
-            const existingIndex = recentWords.findIndex(item => item.term === word);
-            if (existingIndex !== -1) {
-                console.log('이미 존재하는 단어 업데이트');
-                recentWords[existingIndex] = newWord;
-            } else {
-                console.log('새 단어 추가');
-                recentWords.unshift(newWord);
-                wordCount++;
-            }
+        request.onerror = (event) => {
+            console.error('단어 저장 중 오류 발생:', event.target.error);
+            reject(new Error('단어 저장 중 오류가 발생했습니다.'));
+        };
 
-            chrome.storage.sync.set({ recentWords, wordCount }, function () {
-                if (chrome.runtime.lastError) {
-                    console.error('저장 중 오류 발생:', chrome.runtime.lastError);
-                    reject(new Error('단어 저장 중 오류가 발생했습니다.'));
-                } else {
-                    console.log('단어 저장 완료. 현재 단어 수:', wordCount);
-                    resolve({ recentWords, wordCount });
-                }
-            });
-        });
+        request.onsuccess = (event) => {
+            console.log('단어가 성공적으로 저장되었습니다:', word);
+            resolve(newWord);
+        };
     });
 }
 
 // 단어 삭제 함수
-function deleteWord(wordToDelete) {
+async function deleteWord(wordToDelete) {
+    if (!db) {
+        await initDB();
+    }
+
     return new Promise((resolve, reject) => {
-        chrome.storage.sync.get(['recentWords', 'wordCount'], function (result) {
-            let recentWords = result.recentWords || [];
-            let wordCount = result.wordCount || 0;
+        const transaction = db.transaction(['words'], 'readwrite');
+        const store = transaction.objectStore('words');
 
-            const index = recentWords.findIndex(word => word.term === wordToDelete);
-            if (index !== -1) {
-                recentWords.splice(index, 1);
-                wordCount = Math.max(0, wordCount - 1);
+        const request = store.delete(wordToDelete);
 
-                chrome.storage.sync.set({ recentWords, wordCount }, function () {
-                    resolve({ recentWords, wordCount });
-                });
+        request.onerror = (event) => {
+            console.error('단어 삭제 중 오류 발생:', event.target.error);
+            reject(new Error('단어 삭제 중 오류가 발생했습니다.'));
+        };
+
+        request.onsuccess = (event) => {
+            console.log('단어가 성공적으로 삭제되었습니다:', wordToDelete);
+            resolve();
+        };
+    });
+}
+
+// 단어 목록 가져오기 함수
+async function getRecentWords(limit = 100) {
+    if (!db) {
+        await initDB();
+    }
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['words'], 'readonly');
+        const store = transaction.objectStore('words');
+        const index = store.index('addedDate');
+
+        const request = index.openCursor(null, 'prev');
+        const words = [];
+
+        request.onerror = (event) => {
+            reject(new Error('단어 목록을 가져오는 중 오류가 발생했습니다.'));
+        };
+
+        request.onsuccess = (event) => {
+            const cursor = event.target.result;
+            if (cursor && words.length < limit) {
+                words.push(cursor.value);
+                cursor.continue();
             } else {
-                reject(new Error('삭제할 단어를 찾을 수 없습니다.'));
+                resolve(words);
             }
-        });
+        };
     });
 }
 
-// 최근 저장한 단어 목록 가져오기
-function getRecentWords() {
-    return new Promise((resolve) => {
-        chrome.storage.sync.get(['recentWords'], function (result) {
-            let recentWords = result.recentWords || [];
-            recentWords.sort((a, b) => new Date(b.addedDate) - new Date(a.addedDate));
-            console.log('getRecentWords 함수 내부 - 정렬된 단어 목록:', recentWords);
-            resolve(recentWords);
-        });
-    });
-}
 
-// 저장된 단어 수 가져오기
-function getWordCount() {
-    return new Promise((resolve) => {
-        chrome.storage.sync.get(['recentWords'], function (result) {
-            let recentWords = result.recentWords || [];
-            console.log('getWordCount 함수 내부 - 단어 목록:', recentWords);
-            resolve(recentWords.length);
-        });
+// 단어 수 가져오기 함수
+async function getWordCount() {
+    if (!db) {
+        await initDB();
+    }
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['words'], 'readonly');
+        const store = transaction.objectStore('words');
+        const countRequest = store.count();
+
+        countRequest.onerror = (event) => {
+            console.error('단어 수 가져오기 중 오류 발생:', event.target.error);
+            reject(new Error('단어 수를 가져오는 중 오류가 발생했습니다.'));
+        };
+
+        countRequest.onsuccess = (event) => {
+            const count = event.target.result;
+            console.log('현재 저장된 단어 수:', count);
+            resolve(count);
+        };
     });
 }
 
@@ -190,62 +264,124 @@ function getPremiumDays() {
     });
 }
 
+// IndexedDB 크기 확인 함수
+async function getDatabaseSize() {
+    if (!db) {
+        await initDB();
+    }
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['words'], 'readonly');
+        const store = transaction.objectStore('words');
+        const request = store.getAll();
+
+        request.onerror = (event) => {
+            console.error('DB 크기 확인 중 오류 발생:', event.target.error);
+            reject(new Error('DB 크기를 확인하는 중 오류가 발생했습니다.'));
+        };
+
+        request.onsuccess = (event) => {
+            const data = event.target.result;
+            const size = new Blob([JSON.stringify(data)]).size;
+            resolve(size);
+        };
+    });
+}
+
+// 크롬 확장 프로그램의 저장소 제한 (5MB)
+const STORAGE_LIMIT = 5 * 1024 * 1024;
+
 // 메시지 리스너
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     console.log('메시지 수신:', request);
 
-    if (request.action === 'getDefinition') {
-        console.log('getDefinition 요청 처리 시작');
-        callGeminiAPI(request.word, request.context)
-            .then(result => {
-                console.log('Gemini API 결과:', result);
-                sendResponse({
-                    success: true,
-                    word: request.word,
-                    definition: result.definition,
-                    example: result.example
-                });
-            })
-            .catch(error => {
-                console.error('Gemini API 오류:', error);
-                sendResponse({
-                    success: false,
-                    error: error.message
-                });
-            });
-        return true; // 비동기 응답을 위해 true 반환
-    } else if (request.action === 'saveWord') {
-        console.log('saveWord 요청 처리 시작');
-        saveWord(request.word, request.definition, request.example)
-            .then(result => {
-                console.log('단어 저장 결과:', result);
-                sendResponse({ success: true, result });
-            })
-            .catch(error => {
-                console.error('단어 저장 오류:', error);
+    switch (request.action) {
+        case 'getRecentWords':
+            getRecentWords().then(words => {
+                sendResponse({ success: true, words: words });
+            }).catch(error => {
                 sendResponse({ success: false, error: error.message });
             });
-        return true; // 비동기 응답을 위해 true 반환
-    } else if (request.action === 'deleteWord') {
-        deleteWord(request.word)
-            .then(result => sendResponse({ success: true, result }))
-            .catch(error => sendResponse({ success: false, error: error.message }));
-        return true; // 비동기 응답을 위해 true 반환
-    } else if (request.action === 'getRecentWords') {
-        getRecentWords()
-            .then(words => sendResponse({ success: true, words }))
-            .catch(error => sendResponse({ success: false, error: error.message }));
-        return true; // 비동기 응답을 위해 true 반환
-    } else if (request.action === 'getWordCount') {
-        getWordCount()
-            .then(count => sendResponse({ success: true, count }))
-            .catch(error => sendResponse({ success: false, error: error.message }));
-        return true; // 비동기 응답을 위해 true 반환
-    } else if (request.action === 'getPremiumDays') {
-        getPremiumDays()
-            .then(days => sendResponse({ success: true, days }))
-            .catch(error => sendResponse({ success: false, error: error.message }));
-        return true; // 비동기 응답을 위해 true 반환
+            return true; // 비동기 응답을 위해 true 반환
+
+        case 'getDefinition':
+            callGeminiAPI(request.word, request.context)
+                .then(result => {
+                    sendResponse({
+                        success: true,
+                        word: request.word,
+                        definition: result.definition,
+                        example: result.example
+                    });
+                })
+                .catch(error => {
+                    sendResponse({
+                        success: false,
+                        error: error.message
+                    });
+                });
+            return true;
+
+        case 'saveWord':
+            saveWord(request.word, request.definition, request.example)
+                .then(result => {
+                    sendResponse({ success: true, result });
+                })
+                .catch(error => {
+                    sendResponse({ success: false, error: error.message });
+                });
+            return true;
+
+        case 'deleteWord':
+            deleteWord(request.word)
+                .then(() => {
+                    sendResponse({ success: true });
+                })
+                .catch(error => {
+                    sendResponse({ success: false, error: error.message });
+                });
+            return true;
+
+        case 'getWordCount':
+            getWordCount()
+                .then(count => {
+                    console.log('단어 수 요청에 대한 응답:', count);
+                    sendResponse({ success: true, count: count });
+                })
+                .catch(error => {
+                    console.error('단어 수 가져오기 오류:', error);
+                    sendResponse({ success: false, error: error.message });
+                });
+            return true;
+
+        case 'getPremiumDays':
+            getPremiumDays()
+                .then(days => {
+                    sendResponse({ success: true, days });
+                })
+                .catch(error => {
+                    sendResponse({ success: false, error: error.message });
+                });
+            return true;
+
+        case 'getDatabaseSize':
+            getDatabaseSize()
+                .then(size => {
+                    const usagePercentage = (size / STORAGE_LIMIT) * 100;
+                    sendResponse({
+                        success: true,
+                        size: size,
+                        usagePercentage: usagePercentage.toFixed(2)
+                    });
+                })
+                .catch(error => {
+                    sendResponse({ success: false, error: error.message });
+                });
+            return true;
+
+        default:
+            sendResponse({ success: false, error: '알 수 없는 액션' });
+            return false;
     }
 });
 
@@ -253,5 +389,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 chrome.storage.onChanged.addListener((changes, namespace) => {
     if (namespace === 'sync' && changes.apiKey) {
         API_KEY = changes.apiKey.newValue;
+        console.log('API 키가 업데이트됨');
     }
 });

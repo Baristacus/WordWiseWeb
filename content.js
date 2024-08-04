@@ -8,13 +8,13 @@ const floatingIcon = document.createElement('div');
 floatingIcon.id = 'word-wise-web-floating-icon';
 floatingIcon.style.cssText = `
     display: none;
-    position: absolute;
+    position: fixed;
     width: 24px;
     height: 24px;
     background-image: url(${chrome.runtime.getURL('images/floating-icon.png')});
     background-size: cover;
     cursor: pointer;
-    z-index: 9999;
+    z-index: 2147483647;
 `;
 document.body.appendChild(floatingIcon);
 
@@ -48,7 +48,7 @@ function handleTextSelection(event) {
             const range = selection.getRangeAt(0);
             selectedContext = getTextContext(range, 100);
             const rect = range.getBoundingClientRect();
-            showFloatingIcon(rect.left + window.scrollX, rect.top + window.scrollY);
+            showFloatingIcon(rect.left + window.pageXOffset, rect.top + window.pageYOffset);
             console.log('선택된 텍스트 업데이트:', selectedText);
             console.log('문맥:', selectedContext);
         } else if (!isSelecting && event.type === 'mouseup' && event.target !== floatingIcon) {
@@ -97,59 +97,77 @@ async function handleIconClick() {
     if (selectedText && selectedText.length > 0) {
         try {
             console.log('Gemini API 호출 시작');
-            const response = await new Promise((resolve, reject) => {
-                chrome.runtime.sendMessage({
-                    action: 'getDefinition',
-                    word: selectedText,
-                    context: selectedContext
-                }, response => {
-                    if (chrome.runtime.lastError) {
-                        reject(new Error(chrome.runtime.lastError.message));
-                    } else {
-                        resolve(response);
-                    }
-                });
+            const response = await sendMessageToBackground({
+                action: 'getDefinition',
+                word: selectedText,
+                context: selectedContext
             });
             console.log('Gemini API 응답:', response);
 
             if (response && response.success) {
                 console.log('단어 저장 시작');
-                const saveResponse = await new Promise((resolve, reject) => {
-                    chrome.runtime.sendMessage({
-                        action: 'saveWord',
-                        word: response.word,
-                        definition: response.definition,
-                        example: response.example
-                    }, response => {
-                        if (chrome.runtime.lastError) {
-                            reject(new Error(chrome.runtime.lastError.message));
-                        } else {
-                            resolve(response);
-                        }
-                    });
+                const saveResponse = await sendMessageToBackground({
+                    action: 'saveWord',
+                    word: response.word,
+                    definition: response.definition,
+                    example: response.example
                 });
                 console.log('단어 저장 응답:', saveResponse);
 
                 if (saveResponse && saveResponse.success) {
                     console.log('단어가 성공적으로 저장됨');
-                    alert(`단어가 저장되었습니다: ${selectedText}`);
+                    showNotification(`단어가 저장되었습니다: ${selectedText}`);
                 } else {
                     console.error('단어 저장 실패:', saveResponse ? saveResponse.error : '응답 없음');
-                    alert('단어 저장에 실패했습니다.');
+                    showNotification('단어 저장에 실패했습니다.');
                 }
             } else {
                 console.error('단어 의미 가져오기 실패:', response ? response.error : '응답 없음');
-                alert('단어의 의미를 가져오는데 실패했습니다.');
+                showNotification('단어의 의미를 가져오는데 실패했습니다.');
             }
         } catch (error) {
             console.error('오류 발생:', error);
-            alert('오류가 발생했습니다: ' + error.message);
+            showNotification('오류가 발생했습니다: ' + error.message);
         }
     } else {
         console.error('선택된 텍스트가 없습니다.');
-        alert('선택된 텍스트가 없습니다. 단어를 선택한 후 다시 시도해주세요.');
+        showNotification('선택된 텍스트가 없습니다. 단어를 선택한 후 다시 시도해주세요.');
     }
     hideFloatingIcon();
+}
+
+// 배경 스크립트로 메시지를 보내는 함수
+function sendMessageToBackground(message) {
+    return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(message, response => {
+            if (chrome.runtime.lastError) {
+                reject(new Error(chrome.runtime.lastError.message));
+            } else {
+                resolve(response);
+            }
+        });
+    });
+}
+
+// 알림 표시 함수
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #333;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        z-index: 2147483647;
+    `;
+    document.body.appendChild(notification);
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
 }
 
 // 문서 클릭 이벤트 리스너 수정

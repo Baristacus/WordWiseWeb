@@ -8,12 +8,16 @@ const saveSettingsBtn = document.getElementById('saveSettingsBtn');
 
 // API 키 저장 함수
 function saveApiKey(apiKey) {
-    chrome.storage.sync.set({ apiKey }, () => {
-        apiKeyInput.value = `${apiKey.slice(0, 5)}*****`;
-        apiKeyInput.disabled = true;
-        apiKeySaveBtn.textContent = '저장됨';
-        apiKeySaveBtn.classList.remove('btn-primary');
-        apiKeySaveBtn.classList.add('btn-success');
+    return new Promise((resolve, reject) => {
+        chrome.storage.sync.set({ apiKey }, () => {
+            if (chrome.runtime.lastError) {
+                console.error('API 키 저장 오류:', chrome.runtime.lastError);
+                reject(chrome.runtime.lastError);
+            } else {
+                console.log('API 키가 성공적으로 저장됨');
+                resolve();
+            }
+        });
     });
 }
 
@@ -45,8 +49,21 @@ chrome.storage.sync.get(['apiKey'], result => {
         // API 키가 저장되어 있지 않은 경우
         displayUnsavedState();
 
-        // 저장 버튼 클릭 이벤트 리스너
-        apiKeySaveBtn.addEventListener('click', saveApiKey);
+        // API 키 저장 버튼 클릭 이벤트 핸들러
+        apiKeySaveBtn.addEventListener('click', async () => {
+            const apiKey = apiKeyInput.value.trim();
+            if (apiKey.length > 0) {
+                try {
+                    await saveApiKey(apiKey);
+                    alert('API 키가 성공적으로 저장되었습니다.');
+                    displaySavedState(apiKey);
+                } catch (error) {
+                    alert('API 키 저장 중 오류가 발생했습니다: ' + error.message);
+                }
+            } else {
+                alert('유효한 API 키를 입력해주세요.');
+            }
+        });
     }
 });
 
@@ -136,6 +153,38 @@ function loadSettings() {
     });
 }
 
+// 배경 스크립트로 메시지를 보내는 함수
+function sendMessageToBackground(message) {
+    return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(message, response => {
+            if (chrome.runtime.lastError) {
+                reject(new Error(chrome.runtime.lastError.message));
+            } else {
+                resolve(response);
+            }
+        });
+    });
+}
+
+/// DB 크기 정보를 가져오는 함수
+async function getDatabaseInfo() {
+    try {
+        const response = await sendMessageToBackground({ action: 'getDatabaseSize' });
+        if (response && response.success) {
+            const sizeInMB = (response.size / (1024 * 1024)).toFixed(2);
+            const usagePercentage = response.usagePercentage;
+            document.getElementById('dbSize').textContent = `${sizeInMB} MB`;
+            document.getElementById('dbUsagePercentage').textContent = `${usagePercentage}%`;
+        } else {
+            throw new Error(response ? response.error : 'DB 정보를 가져오는데 실패했습니다.');
+        }
+    } catch (error) {
+        console.error('DB 정보 가져오기 중 오류 발생:', error);
+        document.getElementById('dbSize').textContent = '오류';
+        document.getElementById('dbUsagePercentage').textContent = '오류';
+    }
+}
+
 // 이벤트 리스너 등록
 apiKeySaveBtn.addEventListener('click', () => {
     const apiKey = apiKeyInput.value.trim();
@@ -167,3 +216,6 @@ document.querySelectorAll('main section').forEach((section, index) => {
 
 // 페이지 로드 시 설정 불러오기
 document.addEventListener('DOMContentLoaded', loadSettings);
+
+// 페이지 로드 시 DB 정보 업데이트
+document.addEventListener('DOMContentLoaded', getDatabaseInfo);
