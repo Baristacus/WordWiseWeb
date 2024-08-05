@@ -1,15 +1,14 @@
 {
     "manifest_version": 3,
     "name": "Word Wise Web",
-    "version": "1.0",
+    "version": "1.0.0",
     "description": "AI 기반 단어 학습 도우미",
     "permissions": [
         "storage",
-        "activeTab",
-        "scripting"
+        "activeTab"
     ],
     "host_permissions": [
-        "<all_urls>"
+        "https://*.googleapis.com/"
     ],
     "web_accessible_resources": [
         {

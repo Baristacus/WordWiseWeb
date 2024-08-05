@@ -1,612 +1,499 @@
-// DOM 요소 선택
-const apiKeyInput = document.getElementById('apiKeyInput');
-const apiKeySaveBtn = document.getElementById('apiKeySaveBtn');
-const floatingIconSwitch = document.getElementById('floatingIconSwitch');
-const saveExampleSwitch = document.getElementById('saveExampleSwitch');
-const highlightSwitch = document.getElementById('highlightSwitch');
-const saveSettingsBtn = document.getElementById('saveSettingsBtn');
-const wordSearchInput = document.getElementById('wordSearchInput');
-const wordTableBody = document.getElementById('wordTableBody');
-const pagination = document.getElementById('pagination');
+// 상수
+const ITEMS_PER_PAGE = 15;
+const NOTIFICATION_DURATION = 3000;
+const PAGINATION_RANGE = 2;
 
+// DOM 요소
+const DOM = {
+    apiKeyInput: document.getElementById('apiKeyInput'),
+    apiKeySaveBtn: document.getElementById('apiKeySaveBtn'),
+    floatingIconSwitch: document.getElementById('floatingIconSwitch'),
+    saveExampleSwitch: document.getElementById('saveExampleSwitch'),
+    highlightSwitch: document.getElementById('highlightSwitch'),
+    saveSettingsBtn: document.getElementById('saveSettingsBtn'),
+    wordSearchInput: document.getElementById('wordSearchInput'),
+    wordTableBody: document.getElementById('wordTableBody'),
+    pagination: document.getElementById('pagination'),
+    learnWordQuiz: document.getElementById('learnWordQuiz'),
+    learnWordExplain: document.getElementById('learnWordExplain'),
+    learnWordQuizBtn: document.getElementById('learnWordQuizBtn'),
+    learnWordInputBox: document.getElementById('learnWordInputBox'),
+    learnWordInput: document.getElementById('learnWordInput'),
+    learnWordBtn: document.getElementById('learnWordBtn'),
+    dbSize: document.getElementById('dbSize'),
+    dbUsagePercentage: document.getElementById('dbUsagePercentage')
+};
+
+// 전역 변수
 let currentPage = 1;
-const itemsPerPage = 15;
 let words = [];
 let filteredWords = [];
-
-// 날짜 포맷팅 함수 추가
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
-
-// 알림 표시 함수
-function showNotification(message, type = 'info') {
-    const notificationContainer = document.getElementById('notificationContainer');
-    if (!notificationContainer) {
-        console.error('Notification container not found');
-        return;
-    }
-
-    const notification = document.createElement('div');
-    notification.className = `alert alert-${type} alert-dismissible fade show`;
-    notification.role = 'alert';
-    notification.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    `;
-
-    notificationContainer.appendChild(notification);
-
-    // 3초 후 자동으로 알림 제거
-    setTimeout(() => {
-        notification.classList.remove('show');
-        setTimeout(() => {
-            notificationContainer.removeChild(notification);
-        }, 300);
-    }, 3000);
-}
-
-// 단어 목록을 페이지네이션에 맞게 표시하는 함수
-function displayWordList() {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const paginatedWords = filteredWords.slice(startIndex, endIndex);
-
-    wordTableBody.innerHTML = '';
-
-    if (paginatedWords.length === 0) {
-        const emptyRow = document.createElement('tr');
-        emptyRow.innerHTML = '<td colspan="4" class="text-center">표시할 단어가 없습니다.</td>';
-        wordTableBody.appendChild(emptyRow);
-    } else {
-        paginatedWords.forEach(word => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <th scope="row">${word.term}</th>
-                <td>${word.definition}</td>
-                <td>${formatDate(word.addedDate)}</td>
-                <td><button class="btn btn-sm btn-danger delete-word-btn" data-word="${word.term}">삭제</button></td>
-            `;
-            wordTableBody.appendChild(row);
-        });
-    }
-
-    displayPagination();
-}
-
-// 페이지네이션 버튼을 표시하는 함수
-function displayPagination() {
-    const pageCount = Math.ceil(words.length / itemsPerPage);
-    const paginationRange = 2; // 현재 페이지를 중심으로 표시할 페이지 버튼의 범위
-    pagination.innerHTML = '';
-
-    // 처음 페이지 버튼
-    if (currentPage > 1) {
-        const firstPageItem = document.createElement('li');
-        firstPageItem.className = 'page-item';
-        firstPageItem.innerHTML = `<a class="page-link" href="#">처음</a>`;
-        firstPageItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            currentPage = 1;
-            displayWordList();
-        });
-        pagination.appendChild(firstPageItem);
-    }
-
-    // 이전 페이지 버튼
-    if (currentPage > 1) {
-        const prevPageItem = document.createElement('li');
-        prevPageItem.className = 'page-item';
-        prevPageItem.innerHTML = `<a class="page-link" href="#">이전</a>`;
-        prevPageItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            currentPage--;
-            displayWordList();
-        });
-        pagination.appendChild(prevPageItem);
-    }
-
-    // 페이지 번호 버튼
-    const startPage = Math.max(1, currentPage - paginationRange);
-    const endPage = Math.min(pageCount, currentPage + paginationRange);
-
-    if (startPage > 1) {
-        const pageItem = document.createElement('li');
-        pageItem.className = 'page-item';
-        pageItem.innerHTML = `<a class="page-link" href="#">1</a>`;
-        pageItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            currentPage = 1;
-            displayWordList();
-        });
-        pagination.appendChild(pageItem);
-
-        if (startPage > 2) {
-            const dotsItem = document.createElement('li');
-            dotsItem.className = 'page-item disabled';
-            dotsItem.innerHTML = `<a class="page-link" href="#">...</a>`;
-            pagination.appendChild(dotsItem);
-        }
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-        const pageItem = document.createElement('li');
-        pageItem.className = `page-item ${i === currentPage ? 'active' : ''}`;
-        pageItem.innerHTML = `<a class="page-link" href="#">${i}</a>`;
-        pageItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            currentPage = i;
-            displayWordList();
-        });
-        pagination.appendChild(pageItem);
-    }
-
-    if (endPage < pageCount) {
-        if (endPage < pageCount - 1) {
-            const dotsItem = document.createElement('li');
-            dotsItem.className = 'page-item disabled';
-            dotsItem.innerHTML = `<a class="page-link" href="#">...</a>`;
-            pagination.appendChild(dotsItem);
-        }
-
-        const pageItem = document.createElement('li');
-        pageItem.className = 'page-item';
-        pageItem.innerHTML = `<a class="page-link" href="#">${pageCount}</a>`;
-        pageItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            currentPage = pageCount;
-            displayWordList();
-        });
-        pagination.appendChild(pageItem);
-    }
-
-    // 다음 페이지 버튼
-    if (currentPage < pageCount) {
-        const nextPageItem = document.createElement('li');
-        nextPageItem.className = 'page-item';
-        nextPageItem.innerHTML = `<a class="page-link" href="#">다음</a>`;
-        nextPageItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            currentPage++;
-            displayWordList();
-        });
-        pagination.appendChild(nextPageItem);
-    }
-
-    // 마지막 페이지 버튼
-    if (currentPage < pageCount) {
-        const lastPageItem = document.createElement('li');
-        lastPageItem.className = 'page-item';
-        lastPageItem.innerHTML = `<a class="page-link" href="#">마지막</a>`;
-        lastPageItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            currentPage = pageCount;
-            displayWordList();
-        });
-        pagination.appendChild(lastPageItem);
-    }
-}
-
-// 단어 목록을 가져오는 함수
-async function fetchWordList() {
-    try {
-        // console.log('fetchWordList called');
-        const response = await sendMessageToBackground({ action: 'getRecentWords', limit: Infinity });
-
-        // console.log('Response received:', response);
-        if (!response || !response.success) {
-            throw new Error(response ? response.error : '응답이 없습니다.');
-        }
-
-        words = response.words;
-        filteredWords = [...words]; // 초기에 모든 단어를 필터링된 목록에 추가
-        displayWordList();
-    } catch (error) {
-        console.error('단어 목록 표시 중 오류 발생:', error);
-        const errorRow = document.createElement('tr');
-        errorRow.innerHTML = `<td colspan="4" class="text-center text-danger">오류: ${error.message}</td>`;
-        wordTableBody.innerHTML = '';
-        wordTableBody.appendChild(errorRow);
-    }
-}
-
-// 검색 기능 구현
-function searchWords(query) {
-    query = query.toLowerCase();
-    filteredWords = words.filter(word =>
-        word.term.toLowerCase().includes(query) ||
-        word.definition.toLowerCase().includes(query)
-    );
-    currentPage = 1; // 검색 시 첫 페이지로 이동
-    displayWordList();
-}
-
-// 단어 삭제 처리 함수
-async function handleDeleteWord(word) {
-    if (confirm('단어장에서 단어를 삭제하시겠습니까?')) {
-        try {
-            const response = await sendMessageToBackground({ action: 'deleteWord', word: word });
-
-            if (!response.success) {
-                throw new Error(response.error || '단어 삭제에 실패했습니다.');
-            }
-
-            await fetchWordList();
-            showNotification('단어가 성공적으로 삭제되었습니다!', 'success');
-        } catch (error) {
-            console.error('단어 삭제 중 오류 발생:', error);
-            showNotification(error.message || '단어 삭제 중 오류가 발생했습니다.', 'danger');
-        }
-    }
-}
-
-// 페이지 로드 시 단어 목록 표시
-document.addEventListener('DOMContentLoaded', async () => {
-    await fetchWordList();
-
-    // 검색 입력 필드에 이벤트 리스너 추가
-    wordSearchInput.addEventListener('input', (e) => {
-        searchWords(e.target.value);
-    });
-});
-
-// 단어 삭제 버튼 이벤트 리스너
-wordTableBody.addEventListener('click', (event) => {
-    if (event.target.classList.contains('delete-word-btn')) {
-        const word = event.target.dataset.word;
-        handleDeleteWord(word);
-    }
-});
-
-// DOM 요소 선택
-const learnWordQuiz = document.getElementById('learnWordQuiz');
-const learnWordExplain = document.getElementById('learnWordExplain');
-const learnWordQuizBtn = document.getElementById('learnWordQuizBtn');
-const learnWordInputBox = document.getElementById('learnWordInputBox');
-const learnWordInput = document.getElementById('learnWordInput');
-const learnWordBtn = document.getElementById('learnWordBtn');
-
-// 현재 문제로 선택된 단어에 대한 정보를 담아두는 객체
 let wordForQuiz = {};
-
-// 문제풀이 상태 확인하기 위한 변수
 let isCorrected = false;
 
-// 문제 풀기 버튼 이벤트 리스너
-learnWordQuizBtn.addEventListener('click', async () => {
-    await setQuiz();
-});
+// 유틸리티 함수
+const utils = {
+    formatDate(dateString) {
+        const date = new Date(dateString);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    },
 
-// 정답 입력 버튼 이벤트 리스너
-learnWordBtn.addEventListener('click', () => {
-    if (!isCorrected) {
-        checkAnswer();
-    } else {
-        setQuiz(); // 다음 문제로 넘어가기
-    }
-});
-
-// 엔터 키로 정답 제출
-learnWordInput.addEventListener('keypress', function (event) {
-    if (event.key === 'Enter' && !isCorrected) {
-        checkAnswer();
-    }
-});
-
-// 학습하기 문제 세팅 - 단어 목록을 가져와 퀴즈 띄움
-async function setQuiz() {
-    learnWordInput.classList.remove("border-success", "border-danger");
-    learnWordInputBox.classList.remove("border-success", "border-danger");
-    learnWordQuizBtn.innerText = '다음 문제 풀기';
-    learnWordInput.value = '';
-    learnWordInput.disabled = false; // 입력창 활성화
-    learnWordBtn.innerText = '정답 제출';
-    isCorrected = false;
-
-    try {
-        const response = await sendMessageToBackground({ action: 'getRecentWords', limit: Infinity });
-
-        if (!response || !response.success) {
-            throw new Error(response ? response.error : '응답이 없습니다.');
+    showNotification(message, type = 'info') {
+        const notificationContainer = document.getElementById('notificationContainer');
+        if (!notificationContainer) {
+            console.error('Notification container not found');
+            return;
         }
 
-        const wordLists = response.words;
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} alert-dismissible fade show`;
+        notification.role = 'alert';
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
 
-        if (wordLists.length === 0) {
-            learnWordQuiz.textContent = '저장된 단어가 없습니다.';
-            learnWordExplain.textContent = "단어를 추가한 후 다시 시도해주세요.";
-            learnWordInput.disabled = true;
-            learnWordBtn.disabled = true;
-        } else {
-            wordForQuiz = getWeightedRandomItem(wordLists, 'count');
-            learnWordQuiz.textContent = wordForQuiz.definition;
-            learnWordExplain.textContent = "이 의미를 갖는 단어를 적어주세요.";
-            learnWordInput.disabled = false;
-            learnWordBtn.disabled = false;
-        }
-    } catch (error) {
-        console.error('단어 목록 받아오는 중 오류 발생:', error);
-        learnWordQuiz.textContent = '오류가 발생했습니다.';
-        learnWordExplain.textContent = "잠시 후 다시 시도해주세요.";
-        learnWordInput.disabled = true;
-        learnWordBtn.disabled = true;
-    }
-}
+        notificationContainer.appendChild(notification);
 
-// 학습하기 문제 정답 확인
-function checkAnswer() {
-    const userInput = learnWordInput.value.trim();
-    if (userInput) {
-        learnWordInput.classList.remove("border-success", "border-danger");
-        learnWordInputBox.classList.remove("border-success", "border-danger");
-        if (userInput.toLowerCase() === wordForQuiz.term.toLowerCase()) {
-            isCorrected = true;
-            learnWordInput.classList.add("border-success");
-            learnWordInputBox.classList.add("border-success");
-            learnWordExplain.textContent = "정답입니다!";
-            learnWordInput.disabled = true; // 정답 후 입력창 비활성화
-            learnWordBtn.innerText = '다음 문제';
-        } else {
-            learnWordInput.classList.add("border-danger");
-            learnWordInputBox.classList.add("border-danger");
-            learnWordExplain.textContent = "오답입니다. 다시 시도해보세요.";
-            learnWordBtn.innerText = '다시 풀기';
-        }
-    }
-}
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                notificationContainer.removeChild(notification);
+            }, 300);
+        }, NOTIFICATION_DURATION);
+    },
 
-// 리스트에서 가중치를 부여해서 랜덤한 값을 선택
-function getWeightedRandomItem(list, weightKey) {
-    const totalWeight = list.reduce((sum, item) => sum + (item[weightKey] || 1), 0);
-    let randomWeight = Math.random() * totalWeight;
-
-    for (let item of list) {
-        randomWeight -= (item[weightKey] || 1);
-        if (randomWeight <= 0) {
-            return item;
-        }
-    }
-    return list[0]; // 만약 선택되지 않았다면 첫 번째 항목 반환
-}
-
-// 페이지 로드 시 초기 설정
-document.addEventListener('DOMContentLoaded', () => {
-    learnWordInput.disabled = true; // 초기에 입력창 비활성화
-    learnWordBtn.disabled = true; // 초기에 버튼 비활성화
-});
-
-// API 키 저장 함수
-function saveApiKey(apiKey) {
-    return new Promise((resolve, reject) => {
-        chrome.storage.sync.set({ apiKey }, () => {
-            if (chrome.runtime.lastError) {
-                console.error('API 키 저장 오류:', chrome.runtime.lastError);
-                reject(chrome.runtime.lastError);
-            } else {
-                // console.log('API 키가 성공적으로 저장됨');
-                resolve();
-            }
-        });
-    });
-}
-
-// API 키가 저장되어 있는지 확인하고 키 일부만 표시
-chrome.storage.sync.get(['apiKey'], result => {
-    const apiKeyInput = document.getElementById('apiKeyInput');
-    const apiKeySaveBtn = document.getElementById('apiKeySaveBtn');
-
-    if (result.apiKey) {
-        // API 키가 저장되어 있는 경우
-        displaySavedState(result.apiKey);
-
-        // 마우스 오버/아웃 이벤트 리스너 추가
-        apiKeySaveBtn.addEventListener("mouseover", () => {
-            apiKeySaveBtn.textContent = '재설정';
-            apiKeySaveBtn.classList.remove('btn-success');
-            apiKeySaveBtn.classList.add('btn-danger');
-        });
-
-        apiKeySaveBtn.addEventListener("mouseout", () => {
-            apiKeySaveBtn.textContent = '저장됨';
-            apiKeySaveBtn.classList.remove('btn-danger');
-            apiKeySaveBtn.classList.add('btn-success');
-        });
-
-        // 재설정 버튼 클릭 이벤트 리스너
-        apiKeySaveBtn.addEventListener('click', resetApiKey);
-    } else {
-        // API 키가 저장되어 있지 않은 경우
-        displayUnsavedState();
-
-        // API 키 저장 버튼 클릭 이벤트 핸들러
-        apiKeySaveBtn.addEventListener('click', async () => {
-            const apiKey = apiKeyInput.value.trim();
-            if (apiKey.length > 0) {
-                try {
-                    await saveApiKey(apiKey);
-                    alert('API 키가 성공적으로 저장되었습니다.');
-                    displaySavedState(apiKey);
-                } catch (error) {
-                    alert('API 키 저장 중 오류가 발생했습니다: ' + error.message);
+    sendMessageToBackground(message) {
+        return new Promise((resolve, reject) => {
+            chrome.runtime.sendMessage(message, response => {
+                if (chrome.runtime.lastError) {
+                    reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                    resolve(response);
                 }
-            } else {
-                alert('유효한 API 키를 입력해주세요.');
+            });
+        });
+    },
+
+    getWeightedRandomItem(list, weightKey) {
+        const totalWeight = list.reduce((sum, item) => sum + (item[weightKey] || 1), 0);
+        let randomWeight = Math.random() * totalWeight;
+
+        for (let item of list) {
+            randomWeight -= (item[weightKey] || 1);
+            if (randomWeight <= 0) {
+                return item;
             }
-        });
-    }
-});
-
-// API 키 저장 상태 표시 함수
-function displaySavedState(apiKey) {
-    apiKeyInput.value = `${apiKey.slice(0, 5)}*****`;
-    apiKeyInput.disabled = true;
-    apiKeySaveBtn.textContent = '저장됨';
-    apiKeySaveBtn.classList.remove('btn-primary');
-    apiKeySaveBtn.classList.add('btn-success');
-}
-
-// API 키 미저장 상태 표시 함수
-function displayUnsavedState() {
-    apiKeyInput.value = '';
-    apiKeyInput.disabled = false;
-    apiKeySaveBtn.textContent = '저장';
-    apiKeySaveBtn.classList.remove('btn-success', 'btn-danger');
-    apiKeySaveBtn.classList.add('btn-primary');
-}
-
-// API 키 저장 함수
-function saveApiKey() {
-    const apiKey = apiKeyInput.value.trim();
-    if (apiKey) {
-        chrome.storage.sync.set({ apiKey }, () => {
-            displaySavedState(apiKey);
-            setupResetButtonListeners();
-        });
-    }
-}
-
-// API 키 재설정 함수
-function resetApiKey() {
-    chrome.storage.sync.remove('apiKey', () => {
-        displayUnsavedState();
-        apiKeyInput.focus();
-
-        // 이벤트 리스너 제거
-        apiKeySaveBtn.removeEventListener("mouseover", onMouseOver);
-        apiKeySaveBtn.removeEventListener("mouseout", onMouseOut);
-        apiKeySaveBtn.removeEventListener('click', resetApiKey);
-
-        // 저장 버튼 클릭 이벤트 리스너 추가
-        apiKeySaveBtn.addEventListener('click', saveApiKey);
-    });
-}
-
-// 마우스 오버 이벤트 핸들러
-function onMouseOver() {
-    apiKeySaveBtn.textContent = '재설정';
-    apiKeySaveBtn.classList.remove('btn-success');
-    apiKeySaveBtn.classList.add('btn-danger');
-}
-
-// 마우스 아웃 이벤트 핸들러
-function onMouseOut() {
-    apiKeySaveBtn.textContent = '저장됨';
-    apiKeySaveBtn.classList.remove('btn-danger');
-    apiKeySaveBtn.classList.add('btn-success');
-}
-
-// 재설정 버튼 이벤트 리스너 설정 함수
-function setupResetButtonListeners() {
-    apiKeySaveBtn.addEventListener("mouseover", onMouseOver);
-    apiKeySaveBtn.addEventListener("mouseout", onMouseOut);
-    apiKeySaveBtn.removeEventListener('click', saveApiKey);
-    apiKeySaveBtn.addEventListener('click', resetApiKey);
-}
-
-// 설정 저장 함수
-function saveSettings() {
-    const floatingIcon = floatingIconSwitch.checked;
-    const saveExample = saveExampleSwitch.checked;
-    const highlight = highlightSwitch.checked;
-    chrome.storage.sync.set({ floatingIcon, saveExample, highlight }, () => {
-        alert('설정이 저장되었습니다.');
-    });
-}
-
-// 저장된 설정 불러오기 함수
-function loadSettings() {
-    chrome.storage.sync.get(['floatingIcon', 'saveExample', 'highlight'], result => {
-        if (result.floatingIcon) floatingIconSwitch.checked = result.floatingIcon;
-        if (result.saveExample) saveExampleSwitch.checked = result.saveExample;
-        if (result.highlight) highlightSwitch.checked = result.highlight;
-    });
-}
-
-// 배경 스크립트로 메시지를 보내는 함수
-function sendMessageToBackground(message) {
-    return new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(message, response => {
-            if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError.message));
-            } else {
-                resolve(response);
-            }
-        });
-    });
-}
-
-/// DB 크기 정보를 가져오는 함수
-async function getDatabaseInfo() {
-    try {
-        const response = await sendMessageToBackground({ action: 'getDatabaseSize' });
-        if (response && response.success) {
-            const sizeInMB = (response.size / (1024 * 1024)).toFixed(2);
-            const usagePercentage = response.usagePercentage;
-            document.getElementById('dbSize').textContent = `${sizeInMB} MB`;
-            document.getElementById('dbUsagePercentage').textContent = `${usagePercentage}%`;
-        } else {
-            throw new Error(response ? response.error : 'DB 정보를 가져오는데 실패했습니다.');
         }
-    } catch (error) {
-        console.error('DB 정보 가져오기 중 오류 발생:', error);
-        document.getElementById('dbSize').textContent = '오류';
-        document.getElementById('dbUsagePercentage').textContent = '오류';
+        return list[0];
+    },
+
+    getSectionFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('section');
     }
-}
+};
 
-// 이벤트 리스너 등록
-apiKeySaveBtn.addEventListener('click', () => {
-    const apiKey = apiKeyInput.value.trim();
-    if (apiKey.length > 0) {
-        saveApiKey(apiKey);
+// 단어 관리 함수
+const wordManagement = {
+    async fetchWordList() {
+        try {
+            const response = await utils.sendMessageToBackground({ action: 'getRecentWords', limit: Infinity });
+            if (!response || !response.success) {
+                throw new Error(response ? response.error : '응답이 없습니다.');
+            }
+            words = response.words;
+            filteredWords = [...words];
+            this.displayWordList();
+        } catch (error) {
+            console.error('단어 목록 표시 중 오류 발생:', error);
+            DOM.wordTableBody.innerHTML = `
+                <tr><td colspan="4" class="text-center text-danger">오류: ${error.message}</td></tr>
+            `;
+        }
+    },
+
+    displayWordList() {
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        const paginatedWords = filteredWords.slice(startIndex, endIndex);
+
+        DOM.wordTableBody.innerHTML = paginatedWords.length === 0
+            ? '<tr><td colspan="4" class="text-center">표시할 단어가 없습니다.</td></tr>'
+            : paginatedWords.map(word => `
+                <tr>
+                    <th scope="row">${word.term}</th>
+                    <td>${word.definition}</td>
+                    <td>${utils.formatDate(word.addedDate)}</td>
+                    <td><button class="btn btn-sm btn-danger delete-word-btn" data-word="${word.term}">삭제</button></td>
+                </tr>
+            `).join('');
+
+        this.displayPagination();
+    },
+
+    displayPagination() {
+        const pageCount = Math.ceil(filteredWords.length / ITEMS_PER_PAGE);
+        DOM.pagination.innerHTML = '';
+
+        if (currentPage > 1) {
+            this.addPaginationButton('처음', 1);
+            this.addPaginationButton('이전', currentPage - 1);
+        }
+
+        const startPage = Math.max(1, currentPage - PAGINATION_RANGE);
+        const endPage = Math.min(pageCount, currentPage + PAGINATION_RANGE);
+
+        if (startPage > 1) {
+            this.addPaginationButton('1', 1);
+            if (startPage > 2) {
+                this.addPaginationButton('...', null, true);
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            this.addPaginationButton(i.toString(), i, false, i === currentPage);
+        }
+
+        if (endPage < pageCount) {
+            if (endPage < pageCount - 1) {
+                this.addPaginationButton('...', null, true);
+            }
+            this.addPaginationButton(pageCount.toString(), pageCount);
+        }
+
+        if (currentPage < pageCount) {
+            this.addPaginationButton('다음', currentPage + 1);
+            this.addPaginationButton('마지막', pageCount);
+        }
+    },
+
+    addPaginationButton(text, page, disabled = false, active = false) {
+        const li = document.createElement('li');
+        li.className = `page-item ${disabled ? 'disabled' : ''} ${active ? 'active' : ''}`;
+        li.innerHTML = `<a class="page-link" href="#">${text}</a>`;
+        if (!disabled && page !== null) {
+            li.addEventListener('click', (e) => {
+                e.preventDefault();
+                currentPage = page;
+                this.displayWordList();
+            });
+        }
+        DOM.pagination.appendChild(li);
+    },
+
+    searchWords(query) {
+        query = query.toLowerCase();
+        filteredWords = words.filter(word =>
+            word.term.toLowerCase().includes(query) ||
+            word.definition.toLowerCase().includes(query)
+        );
+        currentPage = 1;
+        this.displayWordList();
+    },
+
+    async handleDeleteWord(word) {
+        if (confirm('단어장에서 단어를 삭제하시겠습니까?')) {
+            try {
+                const response = await utils.sendMessageToBackground({ action: 'deleteWord', word: word });
+                if (!response.success) {
+                    throw new Error(response.error || '단어 삭제에 실패했습니다.');
+                }
+                await this.fetchWordList();
+                utils.showNotification('단어가 성공적으로 삭제되었습니다!', 'success');
+            } catch (error) {
+                console.error('단어 삭제 중 오류 발생:', error);
+                utils.showNotification(error.message || '단어 삭제 중 오류가 발생했습니다.', 'danger');
+            }
+        }
     }
-});
+};
 
-saveSettingsBtn.addEventListener('click', saveSettings);
+// 학습 관련 함수
+const learningManagement = {
+    async setQuiz() {
+        this.resetQuizUI();
+        try {
+            const response = await utils.sendMessageToBackground({ action: 'getRecentWords', limit: Infinity });
+            if (!response || !response.success) {
+                throw new Error(response ? response.error : '응답이 없습니다.');
+            }
+            const wordLists = response.words;
+            if (wordLists.length === 0) {
+                this.setEmptyQuizState();
+            } else {
+                this.setActiveQuizState(wordLists);
+            }
+        } catch (error) {
+            console.error('단어 목록 받아오는 중 오류 발생:', error);
+            this.setErrorQuizState();
+        }
+    },
 
-// 페이지 로드 시 설정 불러오기
-document.addEventListener('DOMContentLoaded', loadSettings);
+    resetQuizUI() {
+        DOM.learnWordInput.classList.remove("border-success", "border-danger");
+        DOM.learnWordInputBox.classList.remove("border-success", "border-danger");
+        DOM.learnWordQuizBtn.innerText = '다음 문제 풀기';
+        DOM.learnWordInput.value = '';
+        DOM.learnWordInput.disabled = false;
+        DOM.learnWordBtn.innerText = '정답 제출';
+        isCorrected = false;
+    },
 
-// 페이지 로드 시 DB 정보 업데이트
-document.addEventListener('DOMContentLoaded', getDatabaseInfo);
+    setEmptyQuizState() {
+        DOM.learnWordQuiz.textContent = '저장된 단어가 없습니다.';
+        DOM.learnWordExplain.textContent = "단어를 추가한 후 다시 시도해주세요.";
+        DOM.learnWordInput.disabled = true;
+        DOM.learnWordBtn.disabled = true;
+    },
 
-// URL 파라미터에서 섹션 정보를 가져오는 함수
-function getSectionFromUrl() {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('section');
+    setActiveQuizState(wordLists) {
+        wordForQuiz = utils.getWeightedRandomItem(wordLists, 'count');
+        DOM.learnWordQuiz.textContent = wordForQuiz.definition;
+        DOM.learnWordExplain.textContent = "이 의미를 갖는 단어를 적어주세요.";
+        DOM.learnWordInput.disabled = false;
+        DOM.learnWordBtn.disabled = false;
+    },
+
+    setErrorQuizState() {
+        DOM.learnWordQuiz.textContent = '오류가 발생했습니다.';
+        DOM.learnWordExplain.textContent = "잠시 후 다시 시도해주세요.";
+        DOM.learnWordInput.disabled = true;
+        DOM.learnWordBtn.disabled = true;
+    },
+
+    checkAnswer() {
+        const userInput = DOM.learnWordInput.value.trim();
+        if (userInput) {
+            DOM.learnWordInput.classList.remove("border-success", "border-danger");
+            DOM.learnWordInputBox.classList.remove("border-success", "border-danger");
+            if (userInput.toLowerCase() === wordForQuiz.term.toLowerCase()) {
+                this.setCorrectAnswerState();
+            } else {
+                this.setIncorrectAnswerState();
+            }
+        }
+    },
+
+    setCorrectAnswerState() {
+        isCorrected = true;
+        DOM.learnWordInput.classList.add("border-success");
+        DOM.learnWordInputBox.classList.add("border-success");
+        DOM.learnWordExplain.textContent = "정답입니다!";
+        DOM.learnWordInput.disabled = true;
+        DOM.learnWordBtn.innerText = '다음 문제';
+    },
+
+    setIncorrectAnswerState() {
+        DOM.learnWordInput.classList.add("border-danger");
+        DOM.learnWordInputBox.classList.add("border-danger");
+        DOM.learnWordExplain.textContent = "오답입니다. 다시 시도해보세요.";
+        DOM.learnWordBtn.innerText = '다시 풀기';
+    }
+};
+
+// API 키 관리 함수
+const apiKeyManagement = {
+    saveApiKey(apiKey) {
+        return new Promise((resolve, reject) => {
+            chrome.storage.sync.set({ apiKey }, () => {
+                if (chrome.runtime.lastError) {
+                    console.error('API 키 저장 오류:', chrome.runtime.lastError);
+                    reject(chrome.runtime.lastError);
+                } else {
+                    resolve();
+                }
+            });
+        });
+    },
+
+    displaySavedState(apiKey) {
+        DOM.apiKeyInput.value = `${apiKey.slice(0, 5)}*****`;
+        DOM.apiKeyInput.disabled = true;
+        DOM.apiKeySaveBtn.textContent = '저장됨';
+        DOM.apiKeySaveBtn.classList.remove('btn-primary');
+        DOM.apiKeySaveBtn.classList.add('btn-success');
+    },
+
+    displayUnsavedState() {
+        DOM.apiKeyInput.value = '';
+        DOM.apiKeyInput.disabled = false;
+        DOM.apiKeySaveBtn.textContent = '저장';
+        DOM.apiKeySaveBtn.classList.remove('btn-success', 'btn-danger');
+        DOM.apiKeySaveBtn.classList.add('btn-primary');
+    },
+
+    resetApiKey() {
+        chrome.storage.sync.remove('apiKey', () => {
+            this.displayUnsavedState();
+            DOM.apiKeyInput.focus();
+            this.setupSaveButtonListeners();
+        });
+    },
+
+    setupResetButtonListeners() {
+        DOM.apiKeySaveBtn.addEventListener("mouseover", this.onMouseOver);
+        DOM.apiKeySaveBtn.addEventListener("mouseout", this.onMouseOut);
+        DOM.apiKeySaveBtn.removeEventListener('click', this.saveApiKey);
+        DOM.apiKeySaveBtn.addEventListener('click', () => this.resetApiKey());
+    },
+
+    setupSaveButtonListeners() {
+        DOM.apiKeySaveBtn.removeEventListener("mouseover", this.onMouseOver);
+        DOM.apiKeySaveBtn.removeEventListener("mouseout", this.onMouseOut);
+        DOM.apiKeySaveBtn.removeEventListener('click', () => this.resetApiKey());
+        DOM.apiKeySaveBtn.addEventListener('click', () => this.saveApiKey());
+    },
+
+    onMouseOver() {
+        DOM.apiKeySaveBtn.textContent = '재설정';
+        DOM.apiKeySaveBtn.classList.remove('btn-success');
+        DOM.apiKeySaveBtn.classList.add('btn-danger');
+    },
+
+    onMouseOut() {
+        DOM.apiKeySaveBtn.textContent = '저장됨';
+        DOM.apiKeySaveBtn.classList.remove('btn-danger');
+        DOM.apiKeySaveBtn.classList.add('btn-success');
+    },
+
+    async handleApiKeySave() {
+        const apiKey = DOM.apiKeyInput.value.trim();
+        if (apiKey.length > 0) {
+            try {
+                await this.saveApiKey(apiKey);
+                utils.showNotification('API 키가 성공적으로 저장되었습니다.', 'success');
+                this.displaySavedState(apiKey);
+                this.setupResetButtonListeners();
+            } catch (error) {
+                utils.showNotification('API 키 저장 중 오류가 발생했습니다: ' + error.message, 'danger');
+            }
+        } else {
+            utils.showNotification('유효한 API 키를 입력해주세요.', 'warning');
+        }
+    },
+
+    initializeApiKeyState() {
+        chrome.storage.sync.get(['apiKey'], result => {
+            if (result.apiKey) {
+                this.displaySavedState(result.apiKey);
+                this.setupResetButtonListeners();
+            } else {
+                this.displayUnsavedState();
+                this.setupSaveButtonListeners();
+            }
+        });
+    }
+};
+
+// 설정 관리 함수
+const settingsManagement = {
+    saveSettings() {
+        const settings = {
+            floatingIcon: DOM.floatingIconSwitch.checked,
+            saveExample: DOM.saveExampleSwitch.checked,
+            highlight: DOM.highlightSwitch.checked
+        };
+        chrome.storage.sync.set(settings, () => {
+            utils.showNotification('설정이 저장되었습니다.', 'success');
+        });
+    },
+
+    loadSettings() {
+        chrome.storage.sync.get(['floatingIcon', 'saveExample', 'highlight'], result => {
+            DOM.floatingIconSwitch.checked = !!result.floatingIcon;
+            DOM.saveExampleSwitch.checked = !!result.saveExample;
+            DOM.highlightSwitch.checked = !!result.highlight;
+        });
+    }
+};
+
+// DB 정보 관리 함수
+const databaseManagement = {
+    async getDatabaseInfo() {
+        try {
+            const response = await utils.sendMessageToBackground({ action: 'getDatabaseSize' });
+            if (response && response.success) {
+                const sizeInMB = (response.size / (1024 * 1024)).toFixed(2);
+                const usagePercentage = response.usagePercentage;
+                DOM.dbSize.textContent = `${sizeInMB} MB`;
+                DOM.dbUsagePercentage.textContent = `${usagePercentage}%`;
+            } else {
+                throw new Error(response ? response.error : 'DB 정보를 가져오는데 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('DB 정보 가져오기 중 오류 발생:', error);
+            DOM.dbSize.textContent = '오류';
+            DOM.dbUsagePercentage.textContent = '오류';
+        }
+    }
+};
+
+// 페이지 관리 함수
+const pageManagement = {
+    showSection(sectionId) {
+        document.querySelectorAll('main section').forEach(section => {
+            section.style.display = section.id === sectionId ? 'block' : 'none';
+        });
+
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.classList.toggle('active', link.getAttribute('href').substring(1) === sectionId);
+        });
+    },
+
+    initializePage() {
+        const section = utils.getSectionFromUrl() || 'wordList';
+        this.showSection(section);
+        settingsManagement.loadSettings();
+        databaseManagement.getDatabaseInfo();
+    },
+
+    setupNavigationListeners() {
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = e.target.getAttribute('href').substring(1);
+                this.showSection(targetId);
+                history.pushState(null, '', `?section=${targetId}`);
+            });
+        });
+    }
+};
+
+// 이벤트 리스너 설정
+function setupEventListeners() {
+    DOM.apiKeySaveBtn.addEventListener('click', () => apiKeyManagement.handleApiKeySave());
+    DOM.saveSettingsBtn.addEventListener('click', () => settingsManagement.saveSettings());
+    DOM.wordSearchInput.addEventListener('input', (e) => wordManagement.searchWords(e.target.value));
+    DOM.wordTableBody.addEventListener('click', (event) => {
+        if (event.target.classList.contains('delete-word-btn')) {
+            const word = event.target.dataset.word;
+            wordManagement.handleDeleteWord(word);
+        }
+    });
+    DOM.learnWordQuizBtn.addEventListener('click', () => learningManagement.setQuiz());
+    DOM.learnWordBtn.addEventListener('click', () => {
+        if (!isCorrected) {
+            learningManagement.checkAnswer();
+        } else {
+            learningManagement.setQuiz();
+        }
+    });
+    DOM.learnWordInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter' && !isCorrected) {
+            learningManagement.checkAnswer();
+        }
+    });
 }
 
-// 특정 섹션을 표시하는 함수
-function showSection(sectionId) {
-    document.querySelectorAll('main section').forEach(section => {
-        section.style.display = section.id === sectionId ? 'block' : 'none';
-    });
-
-    // 네비게이션 메뉴 활성화 상태 업데이트
-    document.querySelectorAll('.nav-link').forEach(link => {
-        link.classList.toggle('active', link.getAttribute('href').substring(1) === sectionId);
-    });
+// 초기화 함수
+async function initialize() {
+    apiKeyManagement.initializeApiKeyState();
+    await wordManagement.fetchWordList();
+    pageManagement.initializePage();
+    setupEventListeners();
+    pageManagement.setupNavigationListeners();
 }
 
-// 페이지 로드 시 실행되는 초기화 함수
-function initializePage() {
-    const section = getSectionFromUrl() || 'wordList'; // 기본값으로 'wordList' 사용
-    showSection(section);
-    loadSettings();
-    getDatabaseInfo();
-}
-
-// 페이지 로드 시 초기화 함수 실행
-document.addEventListener('DOMContentLoaded', initializePage);
-
-// 네비게이션 기능 (기존 코드 수정)
-document.querySelectorAll('.nav-link').forEach(link => {
-    link.addEventListener('click', function (e) {
-        e.preventDefault();
-        const targetId = this.getAttribute('href').substring(1);
-        showSection(targetId);
-        // URL 업데이트 (옵션)
-        history.pushState(null, '', `?section=${targetId}`);
-    });
-});
+// 페이지 로드 시 초기화
+document.addEventListener('DOMContentLoaded', initialize);
