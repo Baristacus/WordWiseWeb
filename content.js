@@ -84,9 +84,9 @@ function showFloatingMessage(message, x, y) {
 }
 
 function showFloatingIcon(x, y) {
-    floatingIcon.style.left = `${Math.max(x - FLOATING_ICON_SIZE - FLOATING_MARGIN, FLOATING_MARGIN)}px`;
+    floatingIcon.style.left = `${Math.min(x + FLOATING_MARGIN, window.innerWidth - FLOATING_ICON_SIZE - FLOATING_MARGIN)}px`;
     floatingIcon.style.top = `${Math.max(y - FLOATING_ICON_SIZE - FLOATING_MARGIN, FLOATING_MARGIN)}px`;
-    floatingIcon.style.display = 'block';
+    floatingIcon.style.display = 'block';    
 }
 
 function hideFloatingElements() {
@@ -99,7 +99,7 @@ function hideFloatingIcon() {
     floatingIcon.style.display = 'none';
 }
 
-function showNotification(message) {
+function showNotification(message, bcolor='333') {
     const notification = document.createElement('div');
     notification.textContent = message;
     notification.style.cssText = `
@@ -107,7 +107,7 @@ function showNotification(message) {
         top: 20px;
         left: 50%;
         transform: translateX(-50%);
-        background-color: #333;
+        background-color: #${bcolor};
         color: white;
         padding: 10px 20px;
         border-radius: 5px;
@@ -129,13 +129,11 @@ async function handleTextSelection(event) {
             selectedContext = getTextContext(range, MAX_CONTEXT_LENGTH);
             const rect = range.getBoundingClientRect();
 
-            await checkApiKeyStatus();
 
-            if (isApiKeyValid) {
-                showFloatingIcon(rect.left + window.pageXOffset, rect.top + window.pageYOffset);
-            } else {
-                showFloatingMessage("API 키를 먼저 등록해 주세요.", rect.left + window.pageXOffset, rect.top + window.pageYOffset);
-            }
+            let x = event.clientX;
+            let y = event.clientY
+            showFloatingIcon(x, y);
+
         } else if (!isSelecting && event.type === 'mouseup' && event.target !== floatingIcon && event.target !== floatingMessage) {
             hideFloatingElements();
             selectedText = '';
@@ -145,6 +143,12 @@ async function handleTextSelection(event) {
 }
 
 async function handleIconClick() {
+    await checkApiKeyStatus();
+    if (!isApiKeyValid) {
+        showNotification("API 키를 먼저 등록해 주세요.", "d9534f");
+        return;
+    }
+
     if (selectedText && selectedText.length > 0) {
         try {
             const response = await sendMessageToBackground({
@@ -192,7 +196,7 @@ function handleDocumentClick(event) {
 
 // 이벤트 리스너
 document.addEventListener('mouseup', handleTextSelection);
-document.addEventListener('selectionchange', handleTextSelection);
+// document.addEventListener('selectionchange', handleTextSelection);
 document.addEventListener('mousedown', () => { isSelecting = true; });
 document.addEventListener('mouseup', () => { setTimeout(() => { isSelecting = false; }, 10); });
 floatingIcon.addEventListener('click', handleIconClick);
