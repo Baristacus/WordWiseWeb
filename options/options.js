@@ -125,7 +125,7 @@ const wordManagement = {
                     <th scope="row">${word.term}</th>
                     <td>${word.definition}</td>
                     <td>${utils.formatDate(word.addedDate)}</td>
-                    <td><button class="btn btn-sm btn-danger delete-word-btn" data-word="${word.term}">삭제</button></td>
+                    <td><button class="btn btn-sm btn-danger delete-word-btn" data-word="${word.term}"><i class="bi bi-journal-x"></i> 삭제</button></td>
                 </tr>
             `).join('');
 
