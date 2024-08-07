@@ -185,7 +185,6 @@ async function handleTextSelection(event) {
             selectedText = newSelectedText;
             const range = selection.getRangeAt(0);
             selectedContext = getTextContext(range, MAX_CONTEXT_LENGTH);
-            const rect = range.getBoundingClientRect();
 
             let x = event.clientX;
             let y = event.clientY
@@ -198,6 +197,7 @@ async function handleTextSelection(event) {
         }
     }, 10);
 }
+
 
 async function handleIconClick(event) {
     event.stopPropagation();  // 이벤트 전파 중지
@@ -217,27 +217,21 @@ async function handleIconClick(event) {
 
             if (response && response.success) {
                 showIframe(event.clientX, event.clientY);
+
                 // 아이프레임에 데이터 전송
-                iframe.contentWindow.postMessage({
-                    action: 'showDefinition',
-                    word: response.word,
-                    definition: response.definition,
-                    example: response.example
-                }, '*');
-
-                const saveResponse = await sendMessageToBackground({
-                    action: 'saveWord',
-                    word: response.word,
-                    definition: response.definition,
-                    example: response.example
-                });
-
-                if (saveResponse && saveResponse.success) {
-                    showNotification(`단어가 저장되었습니다: ${selectedText}`);
-                } else {
-                    console.error('단어 저장 실패:', saveResponse ? saveResponse.error : '응답 없음');
-                    showNotification('단어 저장에 실패했습니다.');
+                function handleIframe() {
+                    iframe.contentWindow.postMessage({
+                        action: 'showDefinition',
+                        word: response.word,
+                        definition: response.definition,
+                        example: response.example
+                    }, '*');
                 }
+
+                if (iframe) {
+                    handleIframe();
+                }
+                iframe.onload = () => handleIframe();                
             } else {
                 console.error('단어 의미 가져오기 실패:', response ? response.error : '응답 없음');
                 showNotification('단어의 의미를 가져오는데 실패했습니다.');
