@@ -77,7 +77,7 @@ const wordFunctions = {
                 <div class="accordion-body">
                     <p><strong>의미:</strong> ${word.definition}</p>
                     <p><strong>예문:</strong> ${word.example}</p>
-                    <button class="btn btn-sm btn-danger delete-word-btn" data-word="${word.term}">삭제</button>
+                    <button class="btn btn-sm btn-danger delete-word-btn" data-word="${word.term}"><i class="bi bi-journal-x"></i> 삭제</button>
                 </div>
             </div>
         `;

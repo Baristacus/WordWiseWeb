@@ -21,7 +21,8 @@ const DOM = {
     learnWordInput: document.getElementById('learnWordInput'),
     learnWordBtn: document.getElementById('learnWordBtn'),
     dbSize: document.getElementById('dbSize'),
-    dbUsagePercentage: document.getElementById('dbUsagePercentage')
+    dbUsagePercentage: document.getElementById('dbUsagePercentage'),
+    totalWordCount: document.getElementById('totalWordCount')
 };
 
 // 전역 변수
@@ -118,11 +119,15 @@ const wordManagement = {
         const endIndex = startIndex + ITEMS_PER_PAGE;
         const paginatedWords = filteredWords.slice(startIndex, endIndex);
 
+        // 총 단어 수 업데이트
+        DOM.totalWordCount.textContent = filteredWords.length;
+
         DOM.wordTableBody.innerHTML = paginatedWords.length === 0
-            ? '<tr><td colspan="4" class="text-center">표시할 단어가 없습니다.</td></tr>'
-            : paginatedWords.map(word => `
+            ? '<tr><td colspan="5" class="text-center">표시할 단어가 없습니다.</td></tr>'
+            : paginatedWords.map((word, index) => `
                 <tr>
-                    <th scope="row">${word.term}</th>
+                    <th scope="row">${startIndex + index + 1}</th>
+                    <td>${word.term}</td>
                     <td>${word.definition}</td>
                     <td>${utils.formatDate(word.addedDate)}</td>
                     <td><button class="btn btn-sm btn-danger delete-word-btn" data-word="${word.term}"><i class="bi bi-journal-x"></i> 삭제</button></td>
