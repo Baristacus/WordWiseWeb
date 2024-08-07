@@ -1,5 +1,6 @@
 // DOM 요소 선택
 const DOM = {
+    wordListBtn: document.getElementById('wordListBtn'),
     settingsBtn: document.getElementById('settingsBtn'),
     learnBtn: document.getElementById('learnBtn'),
     saveWordBtn: document.getElementById('saveWordBtn'),
@@ -31,5 +32,6 @@ function openOptionsPage(section) {
 }
 
 // 이벤트 리스너
+DOM.wordListBtn.addEventListener('click', () => openOptionsPage('wordList'));
 DOM.settingsBtn.addEventListener('click', () => openOptionsPage('settings'));
 DOM.learnBtn.addEventListener('click', () => openOptionsPage('learn'));
