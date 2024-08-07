@@ -13,7 +13,10 @@
     "web_accessible_resources": [
         {
             "resources": [
-                "images/*.png"
+                "images/*.png",
+                "floatingCard/floatingCard.html",
+                "floatingCard/floatingCard.js",
+                "floatingCard/floatingCard.css"
             ],
             "matches": [
                 "<all_urls>"

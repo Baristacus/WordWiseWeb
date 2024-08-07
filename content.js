@@ -4,12 +4,16 @@ const FLOATING_MARGIN = 5;
 const MAX_CONTEXT_LENGTH = 100;
 const MAX_WORDS = 3;
 const NOTIFICATION_DURATION = 3000;
+const IFRAME_WIDTH = 530;
+const IFRAME_MIN_HEIGHT = 200;
 
 // 전역 변수
 let selectedText = '';
 let selectedContext = '';
 let isSelecting = false;
 let isApiKeyValid = false;
+let shadowRoot = null;
+let iframe = null;
 
 // DOM 요소
 const floatingMessage = createFloatingElement('word-wise-web-floating-message', `
@@ -42,6 +46,60 @@ function createFloatingElement(id, styles) {
     element.style.cssText = styles;
     document.body.appendChild(element);
     return element;
+}
+
+// Shadow DOM 생성 함수
+function createShadowDOM() {
+    const host = document.createElement('div');
+    host.id = 'word-wise-web-shadow-host';
+    document.body.appendChild(host);
+    shadowRoot = host.attachShadow({ mode: 'closed' });
+    return shadowRoot;
+}
+
+// 아이프레임 생성 함수
+function createIframe() {
+    iframe = document.createElement('iframe');
+    iframe.src = chrome.runtime.getURL('floatingCard/floatingCard.html');
+    iframe.style.cssText = `
+        width: ${IFRAME_WIDTH}px;
+        min-height: ${IFRAME_MIN_HEIGHT}px;
+        height: auto;
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        background-color: white;
+    `;
+    return iframe;
+}
+
+// 아이프레임 크기 조절 함수
+function resizeIframe(height) {
+    if (iframe) {
+        iframe.style.height = `${Math.max(height, IFRAME_MIN_HEIGHT)}px`;
+    }
+}
+
+// 아이프레임 표시 함수
+function showIframe(x, y) {
+    if (!shadowRoot) {
+        shadowRoot = createShadowDOM();
+    }
+    if (!iframe) {
+        iframe = createIframe();
+        shadowRoot.appendChild(iframe);
+    }
+    iframe.style.position = 'fixed';
+    iframe.style.left = `${Math.min(x, window.innerWidth - IFRAME_WIDTH - FLOATING_MARGIN)}px`;
+    iframe.style.top = `${Math.min(y, window.innerHeight - IFRAME_MIN_HEIGHT - FLOATING_MARGIN)}px`;
+    iframe.style.display = 'block';
+}
+
+// 아이프레임 숨기기 함수
+function hideIframe() {
+    if (iframe) {
+        iframe.style.display = 'none';
+    }
 }
 
 async function sendMessageToBackground(message) {
@@ -86,20 +144,20 @@ function showFloatingMessage(message, x, y) {
 function showFloatingIcon(x, y) {
     floatingIcon.style.left = `${Math.min(x + FLOATING_MARGIN, window.innerWidth - FLOATING_ICON_SIZE - FLOATING_MARGIN)}px`;
     floatingIcon.style.top = `${Math.max(y - FLOATING_ICON_SIZE - FLOATING_MARGIN, FLOATING_MARGIN)}px`;
-    floatingIcon.style.display = 'block';    
+    floatingIcon.style.display = 'block';
 }
 
-function hideFloatingElements() {
-    floatingIcon.style.display = 'none';
-    floatingMessage.style.display = 'none';
-}
-
-// hideFloatingIcon 함수 추가
 function hideFloatingIcon() {
     floatingIcon.style.display = 'none';
 }
 
-function showNotification(message, bcolor='333') {
+function hideFloatingElements() {
+    hideFloatingIcon();
+    floatingMessage.style.display = 'none';
+    hideIframe();
+}
+
+function showNotification(message, bcolor = '333') {
     const notification = document.createElement('div');
     notification.textContent = message;
     notification.style.cssText = `
@@ -129,7 +187,6 @@ async function handleTextSelection(event) {
             selectedContext = getTextContext(range, MAX_CONTEXT_LENGTH);
             const rect = range.getBoundingClientRect();
 
-
             let x = event.clientX;
             let y = event.clientY
             showFloatingIcon(x, y);
@@ -142,7 +199,8 @@ async function handleTextSelection(event) {
     }, 10);
 }
 
-async function handleIconClick() {
+async function handleIconClick(event) {
+    event.stopPropagation();  // 이벤트 전파 중지
     await checkApiKeyStatus();
     if (!isApiKeyValid) {
         showNotification("API 키를 먼저 등록해 주세요.", "d9534f");
@@ -158,6 +216,15 @@ async function handleIconClick() {
             });
 
             if (response && response.success) {
+                showIframe(event.clientX, event.clientY);
+                // 아이프레임에 데이터 전송
+                iframe.contentWindow.postMessage({
+                    action: 'showDefinition',
+                    word: response.word,
+                    definition: response.definition,
+                    example: response.example
+                }, '*');
+
                 const saveResponse = await sendMessageToBackground({
                     action: 'saveWord',
                     word: response.word,
@@ -183,11 +250,13 @@ async function handleIconClick() {
         console.error('선택된 텍스트가 없습니다.');
         showNotification('선택된 텍스트가 없습니다. 단어를 선택한 후 다시 시도해주세요.');
     }
-    hideFloatingElements();  // hideFloatingIcon 대신 hideFloatingElements 사용
+    hideFloatingIcon();  // 플로팅 아이콘 숨기기
 }
 
 function handleDocumentClick(event) {
-    if (event.target !== floatingIcon && event.target !== floatingMessage) {
+    if (event.target !== floatingIcon &&
+        event.target !== floatingMessage &&
+        (!iframe || !iframe.contains(event.target))) {
         hideFloatingElements();
         selectedText = '';
         selectedContext = '';
@@ -196,11 +265,15 @@ function handleDocumentClick(event) {
 
 // 이벤트 리스너
 document.addEventListener('mouseup', handleTextSelection);
-// document.addEventListener('selectionchange', handleTextSelection);
 document.addEventListener('mousedown', () => { isSelecting = true; });
 document.addEventListener('mouseup', () => { setTimeout(() => { isSelecting = false; }, 10); });
 floatingIcon.addEventListener('click', handleIconClick);
 document.addEventListener('click', handleDocumentClick);
+window.addEventListener('message', function (event) {
+    if (event.data.action === 'resize') {
+        resizeIframe(event.data.height);
+    }
+});
 
 // 초기화
 console.log('Word Wise Web content script loaded');
