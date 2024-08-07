@@ -1,8 +1,128 @@
+// 상수
+const FLOATING_ICON_SIZE = 24;
+const FLOATING_MARGIN = 5;
+const MAX_CONTEXT_LENGTH = 100;
+const MAX_WORDS = 3;
+const NOTIFICATION_DURATION = 3000;
+const IFRAME_WIDTH = 530;
+const IFRAME_MIN_HEIGHT = 200;
+
 // 전역 변수
 let selectedText = '';
 let selectedContext = '';
 let isSelecting = false;
 let isApiKeyValid = false;
+let shadowRoot = null;
+let iframe = null;
+
+// DOM 요소
+const floatingMessage = createFloatingElement('word-wise-web-floating-message', `
+    display: none;
+    position: fixed;
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    z-index: 2147483647;
+`);
+
+const floatingIcon = createFloatingElement('word-wise-web-floating-icon', `
+    display: none;
+    position: fixed;
+    width: ${FLOATING_ICON_SIZE}px;
+    height: ${FLOATING_ICON_SIZE}px;
+    background-image: url(${chrome.runtime.getURL('images/floating-icon.png')});
+    background-size: cover;
+    cursor: pointer;
+    z-index: 2147483647;
+`);
+
+// 유틸리티 함수
+function createFloatingElement(id, styles) {
+    const element = document.createElement('div');
+    element.id = id;
+    element.style.cssText = styles;
+    document.body.appendChild(element);
+    return element;
+}
+
+// Shadow DOM 생성 함수
+function createShadowDOM() {
+    const host = document.createElement('div');
+    host.id = 'word-wise-web-shadow-host';
+    document.body.appendChild(host);
+    shadowRoot = host.attachShadow({ mode: 'closed' });
+    return shadowRoot;
+}
+
+// 아이프레임 생성 함수
+function createIframe() {
+    iframe = document.createElement('iframe');
+    iframe.src = chrome.runtime.getURL('floatingCard/floatingCard.html');
+    iframe.style.cssText = `
+        width: ${IFRAME_WIDTH}px;
+        min-height: ${IFRAME_MIN_HEIGHT}px;
+        height: auto;
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        background-color: white;
+        position: fixed;
+        z-index: 2147483647;
+    `;
+    return iframe;
+}
+
+// 아이프레임 크기 조절 함수
+function resizeIframe(height) {
+    if (iframe) {
+        iframe.style.height = `${Math.max(height, IFRAME_MIN_HEIGHT)}px`;
+    }
+}
+
+// 아이프레임 표시 함수
+function showIframe(x, y) {
+    if (!shadowRoot) {
+        shadowRoot = createShadowDOM();
+    }
+    if (!iframe) {
+        iframe = createIframe();
+        shadowRoot.appendChild(iframe);
+    }
+    iframe.style.position = 'fixed';
+    iframe.style.left = `${Math.min(x, window.innerWidth - IFRAME_WIDTH - FLOATING_MARGIN)}px`;
+    iframe.style.top = `${Math.min(y, window.innerHeight - IFRAME_MIN_HEIGHT - FLOATING_MARGIN)}px`;
+    iframe.style.display = 'block';
+}
+
+// 아이프레임 숨기기 함수
+function hideIframe() {
+    if (iframe) {
+        iframe.style.display = 'none';
+    }
+}
+
+async function sendMessageToBackground(message) {
+    return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(message, response => {
+            if (chrome.runtime.lastError) {
+                reject(new Error(chrome.runtime.lastError.message));
+            } else {
+                resolve(response);
+            }
+        });
+    });
+}
+
+function getTextContext(range, maxLength) {
+    const container = range.commonAncestorContainer;
+    const textContent = container.textContent || container.innerText;
+    const startOffset = Math.max(0, range.startOffset - maxLength / 2);
+    const endOffset = Math.min(textContent.length, range.endOffset + maxLength / 2);
+    return textContent.slice(startOffset, endOffset);
+}
 
 // API 키 상태 확인 함수
 async function checkApiKeyStatus() {
@@ -15,165 +135,105 @@ async function checkApiKeyStatus() {
     }
 }
 
-// 플로팅 메시지 요소 생성
-const floatingMessage = document.createElement('div');
-floatingMessage.id = 'word-wise-web-floating-message';
-floatingMessage.style.cssText = `
-    display: none;
-    position: fixed;
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-    padding: 10px;
-    border-radius: 5px;
-    font-size: 14px;
-    z-index: 2147483647;
-`;
-document.body.appendChild(floatingMessage);
+// UI 관련 함수
+function showFloatingMessage(message, x, y) {
+    floatingMessage.textContent = message;
+    floatingMessage.style.left = `${Math.max(x, FLOATING_MARGIN)}px`;
+    floatingMessage.style.top = `${Math.max(y - 40, FLOATING_MARGIN)}px`;
+    floatingMessage.style.display = 'block';
+}
 
-// 플로팅 아이콘 생성
-const floatingIcon = document.createElement('div');
-floatingIcon.id = 'word-wise-web-floating-icon';
-floatingIcon.style.cssText = `
-    display: none;
-    position: fixed;
-    width: 24px;
-    height: 24px;
-    background-image: url(${chrome.runtime.getURL('images/floating-icon.png')});
-    background-size: cover;
-    cursor: pointer;
-    z-index: 2147483647;
-`;
-document.body.appendChild(floatingIcon);
+function showFloatingIcon(x, y) {
+    floatingIcon.style.left = `${Math.min(x + FLOATING_MARGIN, window.innerWidth - FLOATING_ICON_SIZE - FLOATING_MARGIN)}px`;
+    floatingIcon.style.top = `${Math.max(y - FLOATING_ICON_SIZE - FLOATING_MARGIN, FLOATING_MARGIN)}px`;
+    floatingIcon.style.display = 'block';
+}
 
-// 텍스트 선택 이벤트 리스너
-document.addEventListener('mouseup', handleTextSelection);
-document.addEventListener('selectionchange', handleTextSelection);
+function hideFloatingIcon() {
+    floatingIcon.style.display = 'none';
+}
 
-// 마우스 이벤트 리스너 추가
-document.addEventListener('mousedown', () => {
-    isSelecting = true;
-    // console.log('마우스 다운: 선택 시작');
-});
-document.addEventListener('mouseup', () => {
-    setTimeout(() => {
-        isSelecting = false;
-        // console.log('마우스 업: 선택 종료');
-    }, 10);
-});
+function hideFloatingElements() {
+    hideFloatingIcon();
+    floatingMessage.style.display = 'none';
+    hideIframe();
+}
 
-// 텍스트 선택 처리 함수
-function handleTextSelection(event) {
-    // console.log('텍스트 선택 이벤트 발생');
+function showNotification(message, bcolor = '333') {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #${bcolor};
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        z-index: 2147483647;
+    `;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), NOTIFICATION_DURATION);
+}
+
+// 이벤트 핸들러
+async function handleTextSelection(event) {
     setTimeout(async () => {
         const selection = window.getSelection();
         const newSelectedText = selection.toString().trim();
 
-        // console.log('현재 선택된 텍스트:', newSelectedText);
-
-        if (newSelectedText.length > 0 && newSelectedText.split(/\s+/).length <= 3) {
+        if (newSelectedText.length > 0 && newSelectedText.split(/\s+/).length <= MAX_WORDS) {
             selectedText = newSelectedText;
             const range = selection.getRangeAt(0);
-            selectedContext = getTextContext(range, 100);
-            const rect = range.getBoundingClientRect();
+            selectedContext = getTextContext(range, MAX_CONTEXT_LENGTH);
 
-            // API 키 상태 확인
-            await checkApiKeyStatus();
+            let x = event.clientX;
+            let y = event.clientY
+            showFloatingIcon(x, y);
 
-            if (isApiKeyValid) {
-                showFloatingIcon(rect.left + window.pageXOffset, rect.top + window.pageYOffset);
-            } else {
-                showFloatingMessage("API 키를 먼저 등록해 주세요.", rect.left + window.pageXOffset, rect.top + window.pageYOffset);
-            }
-
-            // console.log('선택된 텍스트 업데이트:', selectedText);
-            // console.log('문맥:', selectedContext);
         } else if (!isSelecting && event.type === 'mouseup' && event.target !== floatingIcon && event.target !== floatingMessage) {
             hideFloatingElements();
             selectedText = '';
             selectedContext = '';
-            // console.log('선택 해제: 텍스트와 문맥 초기화');
         }
     }, 10);
 }
 
-// 플로팅 메시지 표시 함수
-function showFloatingMessage(message, x, y) {
-    floatingMessage.textContent = message;
-    floatingMessage.style.left = `${Math.max(x, 5)}px`;
-    floatingMessage.style.top = `${Math.max(y - 40, 5)}px`;
-    floatingMessage.style.display = 'block';
-    // console.log('플로팅 메시지 표시됨');
-}
 
-// 플로팅 요소 숨김 함수
-function hideFloatingElements() {
-    floatingIcon.style.display = 'none';
-    floatingMessage.style.display = 'none';
-    // console.log('플로팅 요소 숨겨짐');
-}
-
-// 플로팅 아이콘 표시 함수
-function showFloatingIcon(x, y) {
-    const iconSize = 24;
-    const margin = 5;
-    floatingIcon.style.left = `${Math.max(x - iconSize - margin, margin)}px`;
-    floatingIcon.style.top = `${Math.max(y - iconSize - margin, margin)}px`;
-    floatingIcon.style.display = 'block';
-    // console.log('플로팅 아이콘 표시됨');
-}
-
-// 플로팅 아이콘 숨김 함수
-function hideFloatingIcon() {
-    floatingIcon.style.display = 'none';
-    // console.log('플로팅 아이콘 숨겨짐');
-}
-
-// 선택된 텍스트의 주변 문맥을 가져오는 함수
-function getTextContext(range, maxLength) {
-    const container = range.commonAncestorContainer;
-    const textContent = container.textContent || container.innerText;
-    const startOffset = Math.max(0, range.startOffset - maxLength / 2);
-    const endOffset = Math.min(textContent.length, range.endOffset + maxLength / 2);
-    return textContent.slice(startOffset, endOffset);
-}
-
-// 플로팅 아이콘 클릭 이벤트 처리
-floatingIcon.addEventListener('click', handleIconClick);
-
-// 아이콘 클릭 처리 함수
-async function handleIconClick() {
-    // console.log('플로팅 아이콘 클릭됨');
-    // console.log('클릭 시 선택된 텍스트:', selectedText);
-    // console.log('클릭 시 문맥:', selectedContext);
+async function handleIconClick(event) {
+    event.stopPropagation();  // 이벤트 전파 중지
+    await checkApiKeyStatus();
+    if (!isApiKeyValid) {
+        showNotification("API 키를 먼저 등록해 주세요.", "d9534f");
+        return;
+    }
 
     if (selectedText && selectedText.length > 0) {
         try {
-            // console.log('Gemini API 호출 시작');
             const response = await sendMessageToBackground({
                 action: 'getDefinition',
                 word: selectedText,
                 context: selectedContext
             });
-            // console.log('Gemini API 응답:', response);
 
             if (response && response.success) {
-                // console.log('단어 저장 시작');
-                const saveResponse = await sendMessageToBackground({
-                    action: 'saveWord',
-                    word: response.word,
-                    definition: response.definition,
-                    example: response.example
-                });
-                // console.log('단어 저장 응답:', saveResponse);
+                showIframe(event.clientX, event.clientY);
 
-                if (saveResponse && saveResponse.success) {
-                    // console.log('단어가 성공적으로 저장됨');
-                    showNotification(`단어가 저장되었습니다: ${selectedText}`);
-                } else {
-                    console.error('단어 저장 실패:', saveResponse ? saveResponse.error : '응답 없음');
-                    showNotification('단어 저장에 실패했습니다.');
+                // 아이프레임에 데이터 전송
+                function handleIframe() {
+                    iframe.contentWindow.postMessage({
+                        action: 'showDefinition',
+                        word: response.word,
+                        definition: response.definition,
+                        example: response.example
+                    }, '*');
                 }
+
+                if (iframe) {
+                    handleIframe();
+                }
+                iframe.onload = () => handleIframe();
             } else {
                 console.error('단어 의미 가져오기 실패:', response ? response.error : '응답 없음');
                 showNotification('단어의 의미를 가져오는데 실패했습니다.');
@@ -186,51 +246,30 @@ async function handleIconClick() {
         console.error('선택된 텍스트가 없습니다.');
         showNotification('선택된 텍스트가 없습니다. 단어를 선택한 후 다시 시도해주세요.');
     }
-    hideFloatingIcon();
+    hideFloatingIcon();  // 플로팅 아이콘 숨기기
 }
 
-// 배경 스크립트로 메시지를 보내는 함수
-function sendMessageToBackground(message) {
-    return new Promise((resolve, reject) => {
-        chrome.runtime.sendMessage(message, response => {
-            if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError.message));
-            } else {
-                resolve(response);
-            }
-        });
-    });
-}
-
-// 알림 표시 함수
-function showNotification(message) {
-    const notification = document.createElement('div');
-    notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: #333;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 5px;
-        z-index: 2147483647;
-    `;
-    document.body.appendChild(notification);
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
-}
-
-// 문서 클릭 이벤트 리스너
-document.addEventListener('click', (event) => {
-    if (event.target !== floatingIcon && event.target !== floatingMessage) {
-        // console.log('문서 클릭: 플로팅 요소 외 영역');
+function handleDocumentClick(event) {
+    if (event.target !== floatingIcon &&
+        event.target !== floatingMessage &&
+        (!iframe || !iframe.contains(event.target))) {
         hideFloatingElements();
         selectedText = '';
         selectedContext = '';
     }
+}
+
+// 이벤트 리스너
+document.addEventListener('mouseup', handleTextSelection);
+document.addEventListener('mousedown', () => { isSelecting = true; });
+document.addEventListener('mouseup', () => { setTimeout(() => { isSelecting = false; }, 10); });
+floatingIcon.addEventListener('click', handleIconClick);
+document.addEventListener('click', handleDocumentClick);
+window.addEventListener('message', function (event) {
+    if (event.data.action === 'resize') {
+        resizeIframe(event.data.height);
+    }
 });
 
-// console.log('Word Wise Web content script loaded');
+// 초기화
+console.log('Word Wise Web content script loaded');

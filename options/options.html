@@ -84,6 +84,12 @@
                 <h1><span class="engFont">Word Wise Web: </span> 단어장</h1>
                 <hr />
                 <div class="mb-3">
+                    <p>
+                        총 단어 수:
+                        <span id="totalWordCount" class="fw-bold">0</span>개
+                    </p>
+                </div>
+                <div class="mb-3">
                     <input
                         type="text"
                         id="wordSearchInput"
@@ -93,6 +99,7 @@
                 <table class="table table-striped table-hover mb-3">
                     <thead>
                         <tr>
+                            <th scope="col">#</th>
                             <th scope="col">단어</th>
                             <th scope="col">의미</th>
                             <th scope="col">추가된 날짜</th>

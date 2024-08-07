@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Word Wise Web</title>
+        <link rel="stylesheet" href="../libs/bootstrap.min.css" />
+        <link
+            rel="stylesheet"
+            href="../fonts/Bootstrap-icons/bootstrap-icons.min.css" />
+        <link rel="stylesheet" href="floatingCard.css" />
+    </head>
+    <body>
+        <div class="container-fluid">
+            <header class="row py-2 mb-3 border-bottom text-primary">
+                <div class="col">
+                    <img src="../images/icon-32.png" alt="Word Wise Web 로고" />
+                    <span id="word" class="h5 align-middle fw-bold ms-2"></span>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-light btn-sm" id="wordListBtn">
+                        <i class="bi bi-journal-text"></i>
+                    </button>
+                    <button class="btn btn-light btn-sm" id="learnBtn">
+                        <i class="bi bi-book"></i>
+                    </button>
+                    <button class="btn btn-light btn-sm" id="settingsBtn">
+                        <i class="bi bi-gear-fill"></i>
+                    </button>
+                </div>
+            </header>
+
+            <main class="mb-3">
+                <div id="content">
+                    <p>
+                        <span class="fw-bold">의미</span>:
+                        <span id="definition" class="definition"></span>
+                    </p>
+                    <p>
+                        <span class="fw-bold">예문</span>:
+                        <span id="example" class="example"></span>
+                    </p>
+                </div>
+            </main>
+
+            <footer class="row py-2 border-top small">
+                <div class="col"></div>
+                <div class="col-auto">
+                    <button id="saveWordBtn" class="btn btn-primary btn-sm">
+                        저장
+                    </button>
+                </div>
+            </footer>
+        </div>
+
+        <script src="../content.js"></script>
+        <script src="floatingCard.js"></script>
+        <script src="../libs/bootstrap.bundle.min.js"></script>
+    </body>
+</html>
