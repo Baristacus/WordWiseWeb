@@ -54,7 +54,8 @@ async function handleSaveWord() {
         });
 
         if (saveResponse && saveResponse.success) {
-            showNotification(`단어가 저장되었습니다: ${word}`);
+            DOM.userMemoText.value = "";
+            window.parent.postMessage({ action: 'saveOk', word: word }, '*');            
         } else {
             console.error('단어 저장 실패:', saveResponse ? saveResponse.error : '응답 없음');
             showNotification('단어 저장에 실패했습니다.');

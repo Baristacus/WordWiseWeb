@@ -271,6 +271,9 @@ document.addEventListener('click', handleDocumentClick);
 window.addEventListener('message', function (event) {
     if (event.data.action === 'resize') {
         resizeIframe(event.data.height);
+    } else if (event.data.action === 'saveOk') {
+        hideFloatingElements();
+        showNotification(`단어가 저장되었습니다: ${event.data.word}`);
     }
 });
 
