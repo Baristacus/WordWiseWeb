@@ -81,35 +81,33 @@
                 "></div>
             <!-- 단어장 섹션 -->
             <section id="wordList">
-                <h1><span class="engFont">Word Wise Web: </span> 단어장</h1>
-                <hr />
+                <div class="h4"><span class="engFont">www.</span>단어장</div>
+                <hr
+                    class="border border-2 border-primary opacity-100"
+                    style="width: 180px" />
                 <div class="mb-3">
                     <p>
-                        총 단어 수:
+                        저장된 총 단어 수:
                         <span id="totalWordCount" class="fw-bold">0</span>개
                     </p>
                 </div>
-                <div class="mb-3">
-                    <input
-                        type="text"
-                        id="wordSearchInput"
-                        class="form-control"
-                        placeholder="검색은 대소문자를 구분하지 않으며, 단어와 의미 모두에서 검색어를 찾습니다." />
+                <div class="mb-4">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text"
+                            ><i class="bi bi-search"></i
+                        ></span>
+                        <input
+                            type="text"
+                            id="wordSearchInput"
+                            class="form-control form-control-lg"
+                            placeholder="검색은 대소문자를 구분하지 않으며, 단어와 의미 모두에서 검색어를 찾습니다." />
+                    </div>
                 </div>
-                <table class="table table-striped table-hover mb-3">
-                    <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">단어</th>
-                            <th scope="col">의미</th>
-                            <th scope="col">추가된 날짜</th>
-                            <th scope="col">삭제</th>
-                        </tr>
-                    </thead>
-                    <tbody id="wordTableBody">
-                        <!-- 단어 목록이 여기 동적으로 추가됨 -->
-                    </tbody>
-                </table>
+                <div
+                    id="wordCardBody"
+                    class="row row-cols-1 row-cols-md-3 g-4 mb-5">
+                    <!-- 단어 목록이 여기 동적으로 추가됨 -->
+                </div>
                 <nav>
                     <ul
                         class="pagination justify-content-center"
@@ -121,8 +119,10 @@
 
             <!-- 학습하기 섹션 -->
             <section id="learn">
-                <h1><span class="engFont">Word Wise Web: </span> 학습하기</h1>
-                <hr />
+                <div class="h4"><span class="engFont">www.</span>학습하기</div>
+                <hr
+                    class="border border-2 border-primary opacity-100"
+                    style="width: 180px" />
                 <div class="card">
                     <div class="card-body my-5 py-5">
                         <figure class="text-center my-5 py-5">
@@ -168,8 +168,10 @@
 
             <!-- 도움말 섹션 -->
             <section id="help">
-                <h1><span class="engFont">Word Wise Web: </span> 도움말</h1>
-                <hr />
+                <div class="h4"><span class="engFont">www.</span>도움말</div>
+                <hr
+                    class="border border-2 border-primary opacity-100"
+                    style="width: 180px" />
                 <!-- 기본 사용법 -->
                 <div class="card mb-3">
                     <div class="card-header fw-bold">1. 기본 사용법</div>
@@ -344,10 +346,12 @@
                 </div>
             </section>
 
-            <!-- 일반 설정 섹션 -->
+            <!-- 환경설정 섹션 -->
             <section id="settings">
-                <h1><span class="engFont">Word Wise Web: </span> 설정</h1>
-                <hr />
+                <div class="h4"><span class="engFont">www.</span>환경설정</div>
+                <hr
+                    class="border border-2 border-primary opacity-100"
+                    style="width: 180px" />
 
                 <div class="card mb-3">
                     <div class="card-header fw-bold">
@@ -393,7 +397,7 @@
                         </div>
                     </div>
                     <div class="card-footer d-grid">
-                        <button id="saveSettingsBtn" class="btn btn-success">
+                        <button id="saveSettingsBtn" class="btn btn-primary">
                             설정 저장
                         </button>
                     </div>
@@ -407,7 +411,10 @@
                             <a
                                 href="http://goo.gle/aistudio-korea-YT"
                                 target="_blank"
-                                >http://goo.gle/aistudio-korea-YT</a
+                                class="text-decoration-none"
+                                ><span class="text-warning"
+                                    >http://goo.gle/aistudio-korea-YT</span
+                                ></a
                             ></small
                         >
                     </div>
@@ -436,8 +443,11 @@
 
             <!-- 정보 섹션 -->
             <section id="about">
-                <h1><span class="engFont">Word Wise Web: </span> 정보</h1>
-                <hr />
+                <div class="h4"><span class="engFont">www.</span>정보</div>
+                <hr
+                    class="border border-2 border-primary opacity-100"
+                    style="width: 180px" />
+
                 <div class="card">
                     <div class="card-body">
                         <p>Word Wise Web Extension 버전: 0.0.1</p>

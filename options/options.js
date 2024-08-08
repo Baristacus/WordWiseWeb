@@ -12,7 +12,7 @@ const DOM = {
     highlightSwitch: document.getElementById('highlightSwitch'),
     saveSettingsBtn: document.getElementById('saveSettingsBtn'),
     wordSearchInput: document.getElementById('wordSearchInput'),
-    wordTableBody: document.getElementById('wordTableBody'),
+    wordCardBody: document.getElementById('wordCardBody'),
     pagination: document.getElementById('pagination'),
     learnWordQuiz: document.getElementById('learnWordQuiz'),
     learnWordExplain: document.getElementById('learnWordExplain'),
@@ -108,8 +108,11 @@ const wordManagement = {
             this.displayWordList();
         } catch (error) {
             console.error('단어 목록 표시 중 오류 발생:', error);
-            DOM.wordTableBody.innerHTML = `
-                <tr><td colspan="4" class="text-center text-danger">오류: ${error.message}</td></tr>
+            DOM.wordCardBody.innerHTML = `
+                <div class="alert alert-dismissible alert-danger">
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    오류: ${error.message}
+                </div>
             `;
         }
     },
@@ -122,16 +125,44 @@ const wordManagement = {
         // 총 단어 수 업데이트
         DOM.totalWordCount.textContent = filteredWords.length;
 
-        DOM.wordTableBody.innerHTML = paginatedWords.length === 0
-            ? '<tr><td colspan="5" class="text-center">표시할 단어가 없습니다.</td></tr>'
+        DOM.wordCardBody.innerHTML = paginatedWords.length === 0
+            ? '<div class="text-center">표시할 단어가 없습니다.</div>'
             : paginatedWords.map((word, index) => `
-                <tr>
-                    <th scope="row">${startIndex + index + 1}</th>
-                    <td>${word.term}</td>
-                    <td>${word.definition}</td>
-                    <td>${utils.formatDate(word.addedDate)}</td>
-                    <td><button class="btn btn-sm btn-danger delete-word-btn" data-word="${word.term}"><i class="bi bi-journal-x"></i> 삭제</button></td>
-                </tr>
+
+                <div class="col">
+                    <div class="card border-primary h-100">
+                        <div class="card-header">
+                            <div class="row">
+                                <div class="col">
+                                    #<span>${startIndex + index + 1}</span> <span class="h5 fw-bold text-primary">${word.term}</span>
+                                </div>
+                                <div class="col-auto">
+                                    <button class="btn btn-sm btn-link text-danger text-decoration-none p-0 delete-word-btn" data-word="${word.term}">삭제</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">
+                                <strong>의미: </strong>${word.definition}
+                            </p>
+                            <hr />
+                            <p class="card-text">
+                                <strong>예문: </strong>${word.example}
+                            </p>
+                        </div>
+                        <div class="card-footer text-muted small">
+                            <div class="row">
+                                <div class="col">
+                                    <span>${utils.formatDate(word.addedDate)}</span>
+                                </div>
+                                <div class="col-auto">
+                                    <span>${word.count}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             `).join('');
 
         this.displayPagination();
@@ -317,14 +348,14 @@ const apiKeyManagement = {
         DOM.apiKeyInput.disabled = true;
         DOM.apiKeySaveBtn.textContent = '저장됨';
         DOM.apiKeySaveBtn.classList.remove('btn-primary');
-        DOM.apiKeySaveBtn.classList.add('btn-success');
+        DOM.apiKeySaveBtn.classList.add('btn-dark');
     },
 
     displayUnsavedState() {
         DOM.apiKeyInput.value = '';
         DOM.apiKeyInput.disabled = false;
         DOM.apiKeySaveBtn.textContent = '저장';
-        DOM.apiKeySaveBtn.classList.remove('btn-success', 'btn-danger');
+        DOM.apiKeySaveBtn.classList.remove('btn-dark', 'btn-danger');
         DOM.apiKeySaveBtn.classList.add('btn-primary');
     },
 
@@ -352,14 +383,14 @@ const apiKeyManagement = {
 
     onMouseOver() {
         DOM.apiKeySaveBtn.textContent = '재설정';
-        DOM.apiKeySaveBtn.classList.remove('btn-success');
+        DOM.apiKeySaveBtn.classList.remove('btn-dark');
         DOM.apiKeySaveBtn.classList.add('btn-danger');
     },
 
     onMouseOut() {
         DOM.apiKeySaveBtn.textContent = '저장됨';
         DOM.apiKeySaveBtn.classList.remove('btn-danger');
-        DOM.apiKeySaveBtn.classList.add('btn-success');
+        DOM.apiKeySaveBtn.classList.add('btn-dark');
     },
 
     async handleApiKeySave() {
@@ -470,7 +501,7 @@ function setupEventListeners() {
     DOM.apiKeySaveBtn.addEventListener('click', () => apiKeyManagement.handleApiKeySave());
     DOM.saveSettingsBtn.addEventListener('click', () => settingsManagement.saveSettings());
     DOM.wordSearchInput.addEventListener('input', (e) => wordManagement.searchWords(e.target.value));
-    DOM.wordTableBody.addEventListener('click', (event) => {
+    DOM.wordCardBody.addEventListener('click', (event) => {
         if (event.target.classList.contains('delete-word-btn')) {
             const word = event.target.dataset.word;
             wordManagement.handleDeleteWord(word);
