@@ -9,6 +9,7 @@ const DOM = {
     settingsBtn: document.getElementById('settingsBtn'),
     learnBtn: document.getElementById('learnBtn'),
     saveWordBtn: document.getElementById('saveWordBtn'),
+    userMemoText: document.getElementById('userMemoText'),
 };
 
 // 내용을 표시하고 높이를 계산하는 함수
@@ -42,11 +43,13 @@ function openOptionsPage(section) {
 // 단어 저장 함수
 async function handleSaveWord() {
     try {
+        const userMemo = DOM.userMemoText.value;
         const saveResponse = await sendMessageToBackground({
             action: 'saveWord',
             word: word,
             definition: definition,
-            example: example
+            example: example,
+            userMemo: userMemo
         });
 
         if (saveResponse && saveResponse.success) {

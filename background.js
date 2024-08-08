@@ -132,7 +132,7 @@ async function callGeminiAPI(word, context) {
 }
 
 // 단어 관련 함수
-async function saveWord(word, definition, example) {
+async function saveWord(word, definition, example, userMemo) {
     if (!db) await initDB();
 
     return new Promise((resolve, reject) => {
@@ -150,6 +150,7 @@ async function saveWord(word, definition, example) {
             newWord.count++;
             newWord.definition = definition;
             newWord.example = example;
+            newWord.usermemo = userMemo;
             newWord.addedDate = new Date().toISOString();
 
             const putRequest = store.put(newWord);
@@ -244,7 +245,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             definition: result.definition,
             example: result.example
         })),
-        saveWord: () => saveWord(request.word, request.definition, request.example).then(result => ({ success: true, result })),
+        saveWord: () => saveWord(request.word, request.definition, request.example, request.userMemo).then(result => ({ success: true, result })),
         deleteWord: () => deleteWord(request.word).then(() => ({ success: true })),
         getWordCount: () => getWordCount().then(count => ({ success: true, count })),
         getPremiumDays: () => getPremiumDays().then(days => ({ success: true, days })),
