@@ -4,8 +4,8 @@ const FLOATING_MARGIN = 5;
 const MAX_CONTEXT_LENGTH = 100;
 const MAX_WORDS = 3;
 const NOTIFICATION_DURATION = 3000;
-const IFRAME_WIDTH = 530;
-const IFRAME_MIN_HEIGHT = 200;
+const IFRAME_WIDTH = 500;
+const IFRAME_MIN_HEIGHT = 300;
 
 // 전역 변수
 let selectedText = '';
@@ -69,8 +69,9 @@ function createIframe() {
         border-radius: 8px;
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         background-color: white;
-        position: fixed;
+        position: relative;
         z-index: 2147483647;
+        transition: height 0.3s ease;
     `;
     return iframe;
 }
@@ -200,14 +201,13 @@ async function handleTextSelection(event) {
     }, 10);
 }
 
-
 async function handleIconClick(event) {
     event.stopPropagation();  // 이벤트 전파 중지
     await checkApiKeyStatus();
     if (!isApiKeyValid) {
         hideFloatingIcon();
         showFloatingMessage("API 키를 먼저 등록해 주세요.", event.clientX, event.clientY);
-        return; 
+        return;
     }
 
     if (selectedText && selectedText.length > 0) {
@@ -266,6 +266,8 @@ document.addEventListener('mousedown', () => { isSelecting = true; });
 document.addEventListener('mouseup', () => { setTimeout(() => { isSelecting = false; }, 10); });
 floatingIcon.addEventListener('click', handleIconClick);
 document.addEventListener('click', handleDocumentClick);
+
+// 아이프레임 크기 조절을 위한 메시지 리스너
 window.addEventListener('message', function (event) {
     if (event.data.action === 'resize') {
         resizeIframe(event.data.height);
@@ -274,3 +276,14 @@ window.addEventListener('message', function (event) {
 
 // 초기화
 console.log('Word Wise Web content script loaded');
+
+// 윈도우 크기 변경 시 아이프레임 위치 조정
+window.addEventListener('resize', () => {
+    if (iframe && iframe.style.display !== 'none') {
+        const rect = iframe.getBoundingClientRect();
+        const newLeft = Math.min(rect.left, window.innerWidth - IFRAME_WIDTH - FLOATING_MARGIN);
+        const newTop = Math.min(rect.top, window.innerHeight - parseInt(iframe.style.height) - FLOATING_MARGIN);
+        iframe.style.left = `${newLeft}px`;
+        iframe.style.top = `${newTop}px`;
+    }
+});

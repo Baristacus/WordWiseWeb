@@ -1,6 +1,6 @@
 // 단어 정보 전달용 변수 선언
-let word ="";
-let definition ="";
+let word = "";
+let definition = "";
 let example = "";
 
 // DOM 요소 선택
@@ -10,6 +10,7 @@ const DOM = {
     learnBtn: document.getElementById('learnBtn'),
     saveWordBtn: document.getElementById('saveWordBtn'),
     userMemoText: document.getElementById('userMemoText'),
+    content: document.getElementById('content'),
 };
 
 // 내용을 표시하고 높이를 계산하는 함수
@@ -53,7 +54,7 @@ async function handleSaveWord() {
         });
 
         if (saveResponse && saveResponse.success) {
-            showNotification(`단어가 저장되었습니다: ${selectedText}`);
+            showNotification(`단어가 저장되었습니다: ${word}`);
         } else {
             console.error('단어 저장 실패:', saveResponse ? saveResponse.error : '응답 없음');
             showNotification('단어 저장에 실패했습니다.');
@@ -64,8 +65,48 @@ async function handleSaveWord() {
     }
 }
 
+// 알림 표시 함수
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #333;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        z-index: 1000;
+    `;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+
+// 백그라운드에 메시지 전송 함수
+function sendMessageToBackground(message) {
+    return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(message, response => {
+            if (chrome.runtime.lastError) {
+                reject(new Error(chrome.runtime.lastError.message));
+            } else {
+                resolve(response);
+            }
+        });
+    });
+}
+
 // 이벤트 리스너
 DOM.wordListBtn.addEventListener('click', () => openOptionsPage('wordList'));
 DOM.settingsBtn.addEventListener('click', () => openOptionsPage('settings'));
 DOM.learnBtn.addEventListener('click', () => openOptionsPage('learn'));
 DOM.saveWordBtn.addEventListener('click', async () => handleSaveWord());
+
+// 내용 변경 감지 및 높이 조절
+const observer = new MutationObserver(() => {
+    const height = document.body.scrollHeight;
+    window.parent.postMessage({ action: 'resize', height: height }, '*');
+});
+
+observer.observe(DOM.content, { childList: true, subtree: true });
