@@ -128,44 +128,181 @@ const wordManagement = {
         DOM.wordCardBody.innerHTML = paginatedWords.length === 0
             ? '<div class="text-center">표시할 단어가 없습니다.</div>'
             : paginatedWords.map((word, index) => `
-
-                <div class="col">
-                    <div class="card border-primary h-100">
-                        <div class="card-header">
-                            <div class="row">
-                                <div class="col">
-                                    #<span>${startIndex + index + 1}</span> <span class="h5 fw-bold text-primary">${word.term}</span>
-                                </div>
-                                <div class="col-auto">
-                                    <button class="btn btn-sm btn-link text-danger text-decoration-none p-0 delete-word-btn" data-word="${word.term}">삭제</button>
-                                </div>
+            <div class="col">
+                <div class="card border-primary h-100">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col">
+                                #<span>${startIndex + index + 1}</span> <span class="h5 fw-bold text-primary">${word.term}</span>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-sm btn-link text-danger text-decoration-none p-0 delete-word-btn" data-word="${word.term}">삭제</button>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <p class="card-text">
-                                <strong>의미: </strong>${word.definition}
-                            </p>
-                            <hr />
-                            <p class="card-text">
-                                <strong>예문: </strong>${word.example}
-                            </p>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            <strong>의미: </strong>${word.definition}
+                        </p>
+                        <p class="card-text">
+                            <strong>예문: </strong>${word.example}
+                        </p>
+                        <div class="memo-section" data-word="${word.term}">
+                            ${this.renderMemoSection(word)}
                         </div>
-                        <div class="card-footer text-muted small">
-                            <div class="row">
-                                <div class="col">
-                                    <span>${utils.formatDate(word.addedDate)}</span>
-                                </div>
-                                <div class="col-auto">
-                                    <span>${word.count}</span>
-                                </div>
+                    </div>
+                    <div class="card-footer text-muted small">
+                        <div class="row">
+                            <div class="col">
+                                <span>${utils.formatDate(word.addedDate)}</span>
+                            </div>
+                            <div class="col-auto">
+                                <span>${word.count}</span>
                             </div>
                         </div>
                     </div>
                 </div>
-
-            `).join('');
+            </div>
+        `).join('');
 
         this.displayPagination();
+    },
+
+    renderMemoSection(word) {
+        if (word.usermemo) {
+            return `
+                <hr />
+                <p class="card-text memo-content">
+                    <strong>메모: </strong><span class="memo-text">${word.usermemo}</span>
+                </p>
+                <div class="memo-actions">
+                    <button class="btn btn-sm btn-outline-primary edit-memo-btn">수정</button>
+                    <button class="btn btn-sm btn-outline-danger delete-memo-btn">삭제</button>
+                </div>
+            `;
+        } else {
+            return `
+                <hr />
+                <div class="memo-actions">
+                    <button class="btn btn-sm btn-outline-success add-memo-btn">메모 추가</button>
+                </div>
+            `;
+        }
+    },
+
+    handleMemoAction(event) {
+        const target = event.target;
+        const memoSection = target.closest('.memo-section');
+        if (!memoSection) {
+            console.error('메모 섹션을 찾을 수 없습니다.');
+            return;
+        }
+        const wordTerm = memoSection.dataset.word;
+        if (!wordTerm) {
+            console.error('단어 정보를 찾을 수 없습니다.');
+            return;
+        }
+
+        if (target.classList.contains('add-memo-btn')) {
+            this.handleAddMemo(memoSection, wordTerm);
+        } else if (target.classList.contains('edit-memo-btn')) {
+            this.handleEditMemo(memoSection, wordTerm);
+        } else if (target.classList.contains('delete-memo-btn')) {
+            this.handleDeleteMemo(memoSection, wordTerm);
+        }
+    },
+
+    handleAddMemo(memoSection, wordTerm) {
+        memoSection.innerHTML = this.renderMemoEditForm('');
+        this.setupMemoFormListeners(memoSection, wordTerm);
+    },
+
+    handleEditMemo(memoSection, wordTerm) {
+        const memoTextElement = memoSection.querySelector('.memo-text');
+        if (!memoTextElement) {
+            console.error('메모 텍스트를 찾을 수 없습니다.');
+            return;
+        }
+        const currentMemo = memoTextElement.textContent;
+        memoSection.innerHTML = this.renderMemoEditForm(currentMemo);
+        this.setupMemoFormListeners(memoSection, wordTerm);
+    },
+
+    handleDeleteMemo(memoSection, wordTerm) {
+        if (confirm('메모를 삭제하시겠습니까?')) {
+            this.updateWordMemo(wordTerm, '')
+                .then(() => {
+                    utils.showNotification('메모가 삭제되었습니다.', 'success');
+                    this.refreshWordCard(wordTerm);
+                })
+                .catch(error => {
+                    console.error('메모 삭제 중 오류:', error);
+                    utils.showNotification('메모 삭제 중 오류가 발생했습니다.', 'danger');
+                });
+        }
+    },
+
+    renderMemoEditForm(currentMemo) {
+        return `
+            <hr />
+            <div class="memo-edit-form">
+                <textarea class="form-control mb-2" rows="3">${currentMemo}</textarea>
+                <button class="btn btn-sm btn-primary save-memo-btn">저장</button>
+                <button class="btn btn-sm btn-secondary cancel-memo-btn">취소</button>
+            </div>
+        `;
+    },
+
+    setupMemoFormListeners(memoSection, wordTerm) {
+        const saveBtn = memoSection.querySelector('.save-memo-btn');
+        const cancelBtn = memoSection.querySelector('.cancel-memo-btn');
+
+        saveBtn.addEventListener('click', async () => {
+            const newMemo = memoSection.querySelector('textarea').value.trim();
+            try {
+                await this.updateWordMemo(wordTerm, newMemo);
+                utils.showNotification('메모가 저장되었습니다.', 'success');
+                this.refreshWordCard(wordTerm);
+            } catch (error) {
+                utils.showNotification('메모 저장 중 오류가 발생했습니다.', 'danger');
+            }
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            this.refreshWordCard(wordTerm);
+        });
+    },
+
+    async updateWordMemo(wordTerm, newMemo) {
+        const response = await utils.sendMessageToBackground({
+            action: 'updateWordMemo',
+            word: wordTerm,
+            memo: newMemo
+        });
+
+        if (!response.success) {
+            throw new Error(response.error || '메모 업데이트에 실패했습니다.');
+        }
+    },
+
+    refreshWordCard(wordTerm) {
+        const wordIndex = words.findIndex(word => word.term === wordTerm);
+        if (wordIndex !== -1) {
+            utils.sendMessageToBackground({
+                action: 'getWord',
+                word: wordTerm
+            }).then(response => {
+                if (response.success) {
+                    words[wordIndex] = response.word;
+                    filteredWords = [...words];
+                    this.displayWordList();
+                } else {
+                    console.error('단어 정보를 가져오는데 실패했습니다:', response.error);
+                }
+            }).catch(error => {
+                console.error('단어 정보를 가져오는 중 오류 발생:', error);
+            });
+        }
     },
 
     displayPagination() {
@@ -518,6 +655,13 @@ function setupEventListeners() {
     DOM.learnWordInput.addEventListener('keypress', (event) => {
         if (event.key === 'Enter' && !isCorrected) {
             learningManagement.checkAnswer();
+        }
+    });
+    DOM.wordCardBody.addEventListener('click', (event) => {
+        if (event.target.classList.contains('add-memo-btn') ||
+            event.target.classList.contains('edit-memo-btn') ||
+            event.target.classList.contains('delete-memo-btn')) {
+            wordManagement.handleMemoAction(event);
         }
     });
 }

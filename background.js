@@ -132,6 +132,26 @@ async function callGeminiAPI(word, context) {
 }
 
 // 단어 관련 함수
+async function getWord(word) {
+    if (!db) await initDB();
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.get(word);
+
+        request.onerror = () => reject(new Error('단어 조회 중 오류가 발생했습니다.'));
+        request.onsuccess = (event) => {
+            const wordData = event.target.result;
+            if (wordData) {
+                resolve(wordData);
+            } else {
+                reject(new Error('단어를 찾을 수 없습니다.'));
+            }
+        };
+    });
+}
+
 async function saveWord(word, definition, example, userMemo) {
     if (!db) await initDB();
 
@@ -156,6 +176,31 @@ async function saveWord(word, definition, example, userMemo) {
             const putRequest = store.put(newWord);
             putRequest.onerror = () => reject(new Error('단어 저장 중 오류가 발생했습니다.'));
             putRequest.onsuccess = () => resolve(newWord);
+        };
+
+        getRequest.onerror = () => reject(new Error('단어 조회 중 오류가 발생했습니다.'));
+    });
+}
+
+// 단어 메모 업데이트
+async function updateWordMemo(word, memo) {
+    if (!db) await initDB();
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
+        const getRequest = store.get(word);
+
+        getRequest.onsuccess = function (event) {
+            const wordData = event.target.result;
+            if (wordData) {
+                wordData.usermemo = memo;
+                const putRequest = store.put(wordData);
+                putRequest.onerror = () => reject(new Error('메모 업데이트 중 오류가 발생했습니다.'));
+                putRequest.onsuccess = () => resolve(wordData);
+            } else {
+                reject(new Error('단어를 찾을 수 없습니다.'));
+            }
         };
 
         getRequest.onerror = () => reject(new Error('단어 조회 중 오류가 발생했습니다.'));
@@ -245,7 +290,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             definition: result.definition,
             example: result.example
         })),
+        getWord: () => getWord(request.word).then(word => ({ success: true, word })),
         saveWord: () => saveWord(request.word, request.definition, request.example, request.userMemo).then(result => ({ success: true, result })),
+        updateWordMemo: () => updateWordMemo(request.word, request.memo).then(result => ({ success: true, result })),
         deleteWord: () => deleteWord(request.word).then(() => ({ success: true })),
         getWordCount: () => getWordCount().then(count => ({ success: true, count })),
         getPremiumDays: () => getPremiumDays().then(days => ({ success: true, days })),
