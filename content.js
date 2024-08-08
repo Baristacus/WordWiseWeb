@@ -69,6 +69,8 @@ function createIframe() {
         border-radius: 8px;
         box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         background-color: white;
+        position: fixed;
+        z-index: 2147483647;
     `;
     return iframe;
 }
@@ -232,7 +234,7 @@ async function handleIconClick(event) {
                 if (iframe) {
                     handleIframe();
                 }
-                iframe.onload = () => handleIframe();                
+                iframe.onload = () => handleIframe();
             } else {
                 console.error('단어 의미 가져오기 실패:', response ? response.error : '응답 없음');
                 showNotification('단어의 의미를 가져오는데 실패했습니다.');
