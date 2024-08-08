@@ -30,8 +30,6 @@ window.addEventListener('message', function (event) {
         word = event.data.word;
         definition = event.data.definition;
         example = event.data.example;
-        console.log("아이프레임에서 전달받은 텍스트1: ", word);
-        console.log("아이프레임에서 전달받은 텍스트2: ", event.data.word);
         showDefinition(event.data.word, event.data.definition, event.data.example);
     }
 });

@@ -136,8 +136,8 @@ async function checkApiKeyStatus() {
 // UI 관련 함수
 function showFloatingMessage(message, x, y) {
     floatingMessage.textContent = message;
-    floatingMessage.style.left = `${Math.max(x, FLOATING_MARGIN)}px`;
-    floatingMessage.style.top = `${Math.max(y - 40, FLOATING_MARGIN)}px`;
+    floatingMessage.style.left = `${Math.max(x - 10, FLOATING_MARGIN)}px`;
+    floatingMessage.style.top = `${Math.max(y - 20, FLOATING_MARGIN)}px`;
     floatingMessage.style.display = 'block';
 }
 
@@ -157,7 +157,7 @@ function hideFloatingElements() {
     hideIframe();
 }
 
-function showNotification(message, bcolor = '333') {
+function showNotification(message) {
     const notification = document.createElement('div');
     notification.textContent = message;
     notification.style.cssText = `
@@ -165,7 +165,7 @@ function showNotification(message, bcolor = '333') {
         top: 20px;
         left: 50%;
         transform: translateX(-50%);
-        background-color: #${bcolor};
+        background-color: #333;
         color: white;
         padding: 10px 20px;
         border-radius: 5px;
@@ -203,8 +203,9 @@ async function handleIconClick(event) {
     event.stopPropagation();  // 이벤트 전파 중지
     await checkApiKeyStatus();
     if (!isApiKeyValid) {
-        showNotification("API 키를 먼저 등록해 주세요.", "d9534f");
-        return;
+        hideFloatingIcon();
+        showFloatingMessage("API 키를 먼저 등록해 주세요.", event.clientX, event.clientY);
+        return; 
     }
 
     if (selectedText && selectedText.length > 0) {
