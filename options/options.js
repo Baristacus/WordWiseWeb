@@ -144,9 +144,11 @@ const wordManagement = {
                         <p class="card-text">
                             <strong>의미: </strong>${word.definition}
                         </p>
-                        <p class="card-text">
-                            <strong>예문: </strong>${word.example}
-                        </p>
+                        ${word.example ? `
+                            <p class="card-text">
+                                <strong>예문: </strong>${word.example}
+                            </p>
+                        ` : ''}
                         <div class="memo-section" data-word="${word.term}">
                             ${this.renderMemoSection(word)}
                         </div>
