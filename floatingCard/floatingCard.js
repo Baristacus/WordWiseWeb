@@ -32,7 +32,8 @@ window.addEventListener('message', function (event) {
         word = event.data.word;
         definition = event.data.definition;
         example = event.data.example;
-        showDefinition(event.data.word, event.data.definition, event.data.example);
+        settingSaveE = event.data.exampleSetting;
+        showDefinition(word, definition, example);
     }
 });
 
@@ -44,6 +45,10 @@ function openOptionsPage(section) {
 // 단어 저장 함수
 async function handleSaveWord() {
     try {
+        // 환경설정에서 예문 저장하지 않게 선택 시 값 초기화
+        if (!settingSaveE) {
+            example = "";
+        }
         const userMemo = DOM.userMemoText.value;
         const saveResponse = await sendMessageToBackground({
             action: 'saveWord',
