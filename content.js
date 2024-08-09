@@ -183,25 +183,27 @@ function showNotification(message) {
 
 // 이벤트 핸들러
 async function handleTextSelection(event) {
-    setTimeout(async () => {
-        const selection = window.getSelection();
-        const newSelectedText = selection.toString().trim();
+    if (settingFIcon) {
+        setTimeout(async () => {
+            const selection = window.getSelection();
+            const newSelectedText = selection.toString().trim();
 
-        if (newSelectedText.length > 0 && newSelectedText.split(/\s+/).length <= MAX_WORDS) {
-            selectedText = newSelectedText;
-            const range = selection.getRangeAt(0);
-            selectedContext = getTextContext(range, MAX_CONTEXT_LENGTH);
+            if (newSelectedText.length > 0 && newSelectedText.split(/\s+/).length <= MAX_WORDS) {
+                selectedText = newSelectedText;
+                const range = selection.getRangeAt(0);
+                selectedContext = getTextContext(range, MAX_CONTEXT_LENGTH);
 
-            let x = event.clientX;
-            let y = event.clientY
-            showFloatingIcon(x, y);
+                let x = event.clientX;
+                let y = event.clientY
+                showFloatingIcon(x, y);
 
-        } else if (!isSelecting && event.type === 'mouseup' && event.target !== floatingIcon && event.target !== floatingMessage) {
-            hideFloatingElements();
-            selectedText = '';
-            selectedContext = '';
-        }
-    }, 10);
+            } else if (!isSelecting && event.type === 'mouseup' && event.target !== floatingIcon && event.target !== floatingMessage) {
+                hideFloatingElements();
+                selectedText = '';
+                selectedContext = '';
+            }
+        }, 10);
+    }
 }
 
 async function handleIconClick(event) {
@@ -230,7 +232,8 @@ async function handleIconClick(event) {
                         action: 'showDefinition',
                         word: response.word,
                         definition: response.definition,
-                        example: response.example
+                        example: response.example,
+                        exampleSetting: settingSaveE
                     }, '*');
                 }
 
@@ -304,7 +307,6 @@ document.addEventListener('mousedown', () => { isSelecting = true; });
 document.addEventListener('mouseup', () => { setTimeout(() => { isSelecting = false; }, 10); });
 floatingIcon.addEventListener('click', handleIconClick);
 document.addEventListener('click', handleDocumentClick);
-setTimeout(() => {getSettings()}, 0);
 
 
 // 다른 js에서 메세지를 받아오는 메시지 리스너

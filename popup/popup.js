@@ -64,6 +64,12 @@ const wordFunctions = {
         const countClass = word.count >= 3 ? "text-danger fw-bold" :
             word.count == 2 ? "text-warning fw-medium" : "";
 
+        if (word.example) {
+            example = `<p><strong>예문:</strong> ${word.example}</p>`;
+        } else {
+            example = '';
+        }
+    
         if (word.usermemo) {
             memo = `<hr class="my-2"><p><strong>메모:</strong> ${word.usermemo}</p>`;
         } else {
@@ -81,8 +87,8 @@ const wordFunctions = {
             </h2>
             <div id="collapse${index}" class="accordion-collapse collapse" aria-labelledby="heading${index}" data-bs-parent="#recentWordsAccordion">
                 <div class="accordion-body">
-                    <p><strong>의미:</strong> ${word.definition}</p>
-                    <p><strong>예문:</strong> ${word.example}</p>`
+                    <p><strong>의미:</strong> ${word.definition}</p>`
+                    + example
                     + memo +
                     `<button class="btn btn-sm btn-danger delete-word-btn" data-word="${word.term}"><i class="bi bi-journal-x"></i> 삭제</button>
                 </div>
