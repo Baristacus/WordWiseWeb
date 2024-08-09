@@ -14,6 +14,9 @@ let isSelecting = false;
 let isApiKeyValid = false;
 let shadowRoot = null;
 let iframe = null;
+let settingFIcon = '';
+let settingSaveE = '';
+let settingHl = '';
 
 // DOM 요소
 const floatingMessage = createFloatingElement('word-wise-web-floating-message', `
@@ -260,21 +263,61 @@ function handleDocumentClick(event) {
     }
 }
 
+
+// 환경설정 값 받아오는 함수
+function setSettings() {
+    return new Promise((resolve) => {
+        chrome.storage.sync.get(['floatingIcon', 'saveExample', 'highlight'], (result) => {
+            settingFIcon = result.floatingIcon !== false;
+            settingSaveE = result.saveExample !== false;
+            settingHl = result.highlight !== false;
+            resolve();
+        });
+    })
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setSettings);
+} else {
+    setSettings();
+}
+
+
+// 환경설정 값 변경 시 반영하는 리스너
+chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'sync') {
+        if (changes.floatingIcon) {
+            settingFIcon = changes.floatingIcon.newValue !== false;
+        }
+        if (changes.saveExample) {
+            settingSaveE = changes.saveExample.newValue !== false;
+        }
+        if (changes.highlight) {
+            settingHl = changes.highlight.newValue !== false;
+        }
+    }
+});
+
 // 이벤트 리스너
 document.addEventListener('mouseup', handleTextSelection);
 document.addEventListener('mousedown', () => { isSelecting = true; });
 document.addEventListener('mouseup', () => { setTimeout(() => { isSelecting = false; }, 10); });
 floatingIcon.addEventListener('click', handleIconClick);
 document.addEventListener('click', handleDocumentClick);
+setTimeout(() => {getSettings()}, 0);
 
-// 아이프레임 크기 조절을 위한 메시지 리스너
+
+// 다른 js에서 메세지를 받아오는 메시지 리스너
 window.addEventListener('message', function (event) {
     if (event.data.action === 'resize') {
+        // 아이프레임 크기 조절
         resizeIframe(event.data.height);
     } else if (event.data.action === 'saveOk') {
+        // 단어 저장 후 플로팅 요소 숨기기
         hideFloatingElements();
         showNotification(`단어가 저장되었습니다: ${event.data.word}`);
     }
+    return true;
 });
 
 // 초기화
