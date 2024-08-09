@@ -176,7 +176,7 @@ const wordManagement = {
                     <strong>메모: </strong><span class="memo-text">${word.usermemo}</span>
                 </p>
                 <div class="memo-actions">
-                    <button class="btn btn-sm btn-outline-primary edit-memo-btn">수정</button>
+                    <button class="btn btn-sm btn-outline-dark edit-memo-btn">수정</button>
                     <button class="btn btn-sm btn-outline-danger delete-memo-btn">삭제</button>
                 </div>
             `;
@@ -184,7 +184,7 @@ const wordManagement = {
             return `
                 <hr />
                 <div class="memo-actions">
-                    <button class="btn btn-sm btn-outline-success add-memo-btn">메모 추가</button>
+                    <button class="btn btn-sm btn-outline-primary add-memo-btn">메모 추가</button>
                 </div>
             `;
         }
@@ -232,7 +232,7 @@ const wordManagement = {
         if (confirm('메모를 삭제하시겠습니까?')) {
             this.updateWordMemo(wordTerm, '')
                 .then(() => {
-                    utils.showNotification('메모가 삭제되었습니다.', 'success');
+                    utils.showNotification('메모가 삭제되었습니다.', 'primary');
                     this.refreshWordCard(wordTerm);
                 })
                 .catch(error => {
@@ -261,7 +261,7 @@ const wordManagement = {
             const newMemo = memoSection.querySelector('textarea').value.trim();
             try {
                 await this.updateWordMemo(wordTerm, newMemo);
-                utils.showNotification('메모가 저장되었습니다.', 'success');
+                utils.showNotification('메모가 저장되었습니다.', 'primary');
                 this.refreshWordCard(wordTerm);
             } catch (error) {
                 utils.showNotification('메모 저장 중 오류가 발생했습니다.', 'danger');
@@ -359,7 +359,8 @@ const wordManagement = {
         query = query.toLowerCase();
         filteredWords = words.filter(word =>
             word.term.toLowerCase().includes(query) ||
-            word.definition.toLowerCase().includes(query)
+            word.definition.toLowerCase().includes(query) ||
+            (word.usermemo && word.usermemo.toLowerCase().includes(query))
         );
         currentPage = 1;
         this.displayWordList();
@@ -373,7 +374,7 @@ const wordManagement = {
                     throw new Error(response.error || '단어 삭제에 실패했습니다.');
                 }
                 await this.fetchWordList();
-                utils.showNotification('단어가 성공적으로 삭제되었습니다!', 'success');
+                utils.showNotification('단어가 성공적으로 삭제되었습니다!', 'primary');
             } catch (error) {
                 console.error('단어 삭제 중 오류 발생:', error);
                 utils.showNotification(error.message || '단어 삭제 중 오류가 발생했습니다.', 'danger');
@@ -535,7 +536,7 @@ const apiKeyManagement = {
         if (apiKey.length > 0) {
             try {
                 await this.saveApiKey(apiKey);
-                utils.showNotification('API 키가 성공적으로 저장되었습니다.', 'success');
+                utils.showNotification('API 키가 성공적으로 저장되었습니다.', 'primary');
                 this.displaySavedState(apiKey);
                 this.setupResetButtonListeners();
             } catch (error) {
@@ -568,7 +569,7 @@ const settingsManagement = {
             highlight: DOM.highlightSwitch.checked
         };
         chrome.storage.sync.set(settings, () => {
-            utils.showNotification('설정이 저장되었습니다.', 'success');
+            utils.showNotification('설정이 저장되었습니다.', 'primary');
         });
     },
 
