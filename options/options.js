@@ -99,7 +99,7 @@ const utils = {
 const wordManagement = {
     async fetchWordList() {
         try {
-            const response = await utils.sendMessageToBackground({ action: 'getRecentWords', limit: Infinity });
+            const response = await utils.sendMessageToBackground({ action: 'getRecentWords' });
             if (!response || !response.success) {
                 throw new Error(response ? response.error : '응답이 없습니다.');
             }
@@ -109,11 +109,11 @@ const wordManagement = {
         } catch (error) {
             console.error('단어 목록 표시 중 오류 발생:', error);
             DOM.wordCardBody.innerHTML = `
-                <div class="alert alert-dismissible alert-danger">
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    오류: ${error.message}
-                </div>
-            `;
+        <div class="alert alert-dismissible alert-danger">
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            오류: ${error.message}
+        </div>
+        `;
         }
     },
 
@@ -144,9 +144,11 @@ const wordManagement = {
                         <p class="card-text">
                             <strong>의미: </strong>${word.definition}
                         </p>
-                        <p class="card-text">
-                            <strong>예문: </strong>${word.example}
-                        </p>
+                        ${word.example ? `
+                            <p class="card-text">
+                                <strong>예문: </strong>${word.example}
+                            </p>
+                        ` : ''}
                         <div class="memo-section" data-word="${word.term}">
                             ${this.renderMemoSection(word)}
                         </div>
@@ -382,6 +384,17 @@ const wordManagement = {
         }
     }
 };
+
+// 새 단어 추가 메시지 수신 리스너
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'wordAdded') {
+        // 새 단어를 목록에 추가하고 화면을 갱신합니다
+        words.unshift(message.word);
+        filteredWords.unshift(message.word);
+        wordManagement.displayWordList();
+        utils.showNotification('새 단어가 추가되었습니다: ' + message.word.term, 'primary');
+    }
+});
 
 // 학습 관련 함수
 const learningManagement = {
