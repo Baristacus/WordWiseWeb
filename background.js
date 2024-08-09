@@ -175,7 +175,11 @@ async function saveWord(word, definition, example, userMemo) {
 
             const putRequest = store.put(newWord);
             putRequest.onerror = () => reject(new Error('단어 저장 중 오류가 발생했습니다.'));
-            putRequest.onsuccess = () => resolve(newWord);
+            putRequest.onsuccess = () => {
+                // 단어 저장 성공 후 옵션 페이지에 메시지 전송
+                chrome.runtime.sendMessage({ action: 'wordAdded', word: newWord });
+                resolve(newWord);
+            };
         };
 
         getRequest.onerror = () => reject(new Error('단어 조회 중 오류가 발생했습니다.'));
