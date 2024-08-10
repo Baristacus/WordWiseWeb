@@ -220,7 +220,7 @@ async function deleteWord(wordToDelete) {
     });
 }
 
-async function getRecentWords(limit = 100) {
+async function getRecentWords(limit = 1000) {
     if (!db) await initDB();
 
     return new Promise((resolve, reject) => {
