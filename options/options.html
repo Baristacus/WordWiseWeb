@@ -43,10 +43,19 @@
                             <a class="nav-link" href="#wordList">단어장</a>
                         </li>
                         <li class="nav-item ms-2">
-                            <a class="nav-link" href="#learn">학습하기</a>
+                            <a class="nav-link" href="#learn1"
+                                >학습: 단어 맞추기</a
+                            >
                         </li>
                         <li class="nav-item ms-2">
-                            <a class="nav-link" href="#help">도움말</a>
+                            <a class="nav-link" href="#learn2"
+                                >학습: 의미 맞추기</a
+                            >
+                        </li>
+                        <li class="nav-item ms-2">
+                            <a class="nav-link" href="#learn3"
+                                >학습: 의미 연결</a
+                            >
                         </li>
                     </ul>
 
@@ -55,15 +64,18 @@
                         <a class="nav-link mx-2 text-muted" href="#settings"
                             >환경설정</a
                         >
+                        <a class="nav-link mx-2 text-muted" href="#help"
+                            >도움말</a
+                        >
                         <a class="nav-link mx-2 text-muted" href="#about"
                             >정보</a
                         >
-                        <a
+                        <!-- <a
                             class="nav-link mx-2 text-muted disabled"
                             href="#"
                             target="_blank"
                             >홈페이지</a
-                        >
+                        > -->
                     </div>
                 </div>
             </div>
@@ -117,53 +129,40 @@
                 </nav>
             </section>
 
-            <!-- 학습하기 섹션 -->
-            <section id="learn">
-                <div class="h4"><span class="engFont">www.</span>학습하기</div>
+            <!-- 학습하기: 단어 맞추기 섹션 -->
+            <section id="learn1">
+                <div class="h4">
+                    <span class="engFont">www.</span>학습하기: 단어 맞추기
+                </div>
                 <hr
                     class="border border-2 border-primary opacity-100"
-                    style="width: 180px" />
-                <div class="card">
-                    <div class="card-body my-5 py-5">
-                        <figure class="text-center my-5 py-5">
-                            <blockquote class="blockquote" id="learnWordQuiz">
-                                랜덤으로 출력되는 의미를 보고 단어를 맞춰주세요.
-                            </blockquote>
-                            <figcaption
-                                class="blockquote-footer"
-                                id="learnWordExplain">
-                                저장된 횟수가 많을수록 더 자주 출력됩니다.
-                            </figcaption>
-                            <button
-                                class="btn btn-outline-primary"
-                                type="button"
-                                id="learnWordQuizBtn">
-                                문제 풀기
-                            </button>
-                        </figure>
-                    </div>
-                    <div class="card-footer">
-                        <div class="input-group">
-                            <span
-                                class="input-group-text"
-                                id="learnWordInputBox"
-                                >의미에 해당하는 단어를 입력하세요</span
-                            >
-                            <input
-                                type="text"
-                                class="form-control"
-                                id="learnWordInput"
-                                aria-label="Sizing example input"
-                                aria-describedby="learnWordInput" />
-                            <button
-                                class="btn btn-outline-primary"
-                                type="button"
-                                id="learnWordBtn">
-                                입력
-                            </button>
-                        </div>
-                    </div>
+                    style="width: 360px" />
+
+                <div>단어 맞추기 내용</div>
+            </section>
+
+            <!-- 학습하기: 의미 맞추기 섹션 -->
+            <section id="learn2">
+                <div class="h4">
+                    <span class="engFont">www.</span>학습하기: 의미 맞추기
                 </div>
+                <hr
+                    class="border border-2 border-primary opacity-100"
+                    style="width: 360px" />
+
+                <div>의미 맞추기 섹션</div>
+            </section>
+
+            <!-- 학습하기: 의미 연결하기 섹션 -->
+            <section id="learn3">
+                <div class="h4">
+                    <span class="engFont">www.</span>학습하기: 의미 연결하기
+                </div>
+                <hr
+                    class="border border-2 border-primary opacity-100"
+                    style="width: 360px" />
+
+                <div>의미 연결하기 내용</div>
             </section>
 
             <!-- 도움말 섹션 -->
@@ -451,7 +450,7 @@
 
                 <div class="card">
                     <div class="card-body">
-                        <p>Word Wise Web Extension 버전: 0.0.1</p>
+                        <p>Word Wise Web Extension 버전: 0.2.0</p>
                         <p>개발자: Baristacus, Koho, Sydneyskim</p>
                         <p>
                             깃허브:
