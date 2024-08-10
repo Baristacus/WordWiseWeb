@@ -14,12 +14,6 @@ const DOM = {
     wordSearchInput: document.getElementById('wordSearchInput'),
     wordCardBody: document.getElementById('wordCardBody'),
     pagination: document.getElementById('pagination'),
-    learnWordQuiz: document.getElementById('learnWordQuiz'),
-    learnWordExplain: document.getElementById('learnWordExplain'),
-    learnWordQuizBtn: document.getElementById('learnWordQuizBtn'),
-    learnWordInputBox: document.getElementById('learnWordInputBox'),
-    learnWordInput: document.getElementById('learnWordInput'),
-    learnWordBtn: document.getElementById('learnWordBtn'),
     dbSize: document.getElementById('dbSize'),
     dbUsagePercentage: document.getElementById('dbUsagePercentage'),
     totalWordCount: document.getElementById('totalWordCount')
@@ -29,8 +23,7 @@ const DOM = {
 let currentPage = 1;
 let words = [];
 let filteredWords = [];
-let wordForQuiz = {};
-let isCorrected = false;
+
 
 // 유틸리티 함수
 const utils = {
@@ -74,19 +67,6 @@ const utils = {
                 }
             });
         });
-    },
-
-    getWeightedRandomItem(list, weightKey) {
-        const totalWeight = list.reduce((sum, item) => sum + (item[weightKey] || 1), 0);
-        let randomWeight = Math.random() * totalWeight;
-
-        for (let item of list) {
-            randomWeight -= (item[weightKey] || 1);
-            if (randomWeight <= 0) {
-                return item;
-            }
-        }
-        return list[0];
     },
 
     getSectionFromUrl() {
@@ -385,88 +365,6 @@ const wordManagement = {
     }
 };
 
-// 학습 관련 함수
-const learningManagement = {
-    async setQuiz() {
-        this.resetQuizUI();
-        try {
-            const response = await utils.sendMessageToBackground({ action: 'getRecentWords', limit: Infinity });
-            if (!response || !response.success) {
-                throw new Error(response ? response.error : '응답이 없습니다.');
-            }
-            const wordLists = response.words;
-            if (wordLists.length === 0) {
-                this.setEmptyQuizState();
-            } else {
-                this.setActiveQuizState(wordLists);
-            }
-        } catch (error) {
-            console.error('단어 목록 받아오는 중 오류 발생:', error);
-            this.setErrorQuizState();
-        }
-    },
-
-    resetQuizUI() {
-        DOM.learnWordInput.classList.remove("border-success", "border-danger");
-        DOM.learnWordInputBox.classList.remove("border-success", "border-danger");
-        DOM.learnWordQuizBtn.innerText = '다음 문제 풀기';
-        DOM.learnWordInput.value = '';
-        DOM.learnWordInput.disabled = false;
-        DOM.learnWordBtn.innerText = '정답 제출';
-        isCorrected = false;
-    },
-
-    setEmptyQuizState() {
-        DOM.learnWordQuiz.textContent = '저장된 단어가 없습니다.';
-        DOM.learnWordExplain.textContent = "단어를 추가한 후 다시 시도해주세요.";
-        DOM.learnWordInput.disabled = true;
-        DOM.learnWordBtn.disabled = true;
-    },
-
-    setActiveQuizState(wordLists) {
-        wordForQuiz = utils.getWeightedRandomItem(wordLists, 'count');
-        DOM.learnWordQuiz.textContent = wordForQuiz.definition;
-        DOM.learnWordExplain.textContent = "이 의미를 갖는 단어를 적어주세요.";
-        DOM.learnWordInput.disabled = false;
-        DOM.learnWordBtn.disabled = false;
-    },
-
-    setErrorQuizState() {
-        DOM.learnWordQuiz.textContent = '오류가 발생했습니다.';
-        DOM.learnWordExplain.textContent = "잠시 후 다시 시도해주세요.";
-        DOM.learnWordInput.disabled = true;
-        DOM.learnWordBtn.disabled = true;
-    },
-
-    checkAnswer() {
-        const userInput = DOM.learnWordInput.value.trim();
-        if (userInput) {
-            DOM.learnWordInput.classList.remove("border-success", "border-danger");
-            DOM.learnWordInputBox.classList.remove("border-success", "border-danger");
-            if (userInput.toLowerCase() === wordForQuiz.term.toLowerCase()) {
-                this.setCorrectAnswerState();
-            } else {
-                this.setIncorrectAnswerState();
-            }
-        }
-    },
-
-    setCorrectAnswerState() {
-        isCorrected = true;
-        DOM.learnWordInput.classList.add("border-success");
-        DOM.learnWordInputBox.classList.add("border-success");
-        DOM.learnWordExplain.textContent = "정답입니다!";
-        DOM.learnWordInput.disabled = true;
-        DOM.learnWordBtn.innerText = '다음 문제';
-    },
-
-    setIncorrectAnswerState() {
-        DOM.learnWordInput.classList.add("border-danger");
-        DOM.learnWordInputBox.classList.add("border-danger");
-        DOM.learnWordExplain.textContent = "오답입니다. 다시 시도해보세요.";
-        DOM.learnWordBtn.innerText = '다시 풀기';
-    }
-};
 
 // API 키 관리 함수
 const apiKeyManagement = {
@@ -645,19 +543,6 @@ function setupEventListeners() {
         if (event.target.classList.contains('delete-word-btn')) {
             const word = event.target.dataset.word;
             wordManagement.handleDeleteWord(word);
-        }
-    });
-    DOM.learnWordQuizBtn.addEventListener('click', () => learningManagement.setQuiz());
-    DOM.learnWordBtn.addEventListener('click', () => {
-        if (!isCorrected) {
-            learningManagement.checkAnswer();
-        } else {
-            learningManagement.setQuiz();
-        }
-    });
-    DOM.learnWordInput.addEventListener('keypress', (event) => {
-        if (event.key === 'Enter' && !isCorrected) {
-            learningManagement.checkAnswer();
         }
     });
     DOM.wordCardBody.addEventListener('click', (event) => {
