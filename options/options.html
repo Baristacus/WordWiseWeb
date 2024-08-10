@@ -43,17 +43,17 @@
                             <a class="nav-link" href="#wordList">단어장</a>
                         </li>
                         <li class="nav-item ms-2">
-                            <a class="nav-link" href="#learn1"
+                            <a class="nav-link" href="#wordMatching"
                                 >학습: 단어 맞추기</a
                             >
                         </li>
                         <li class="nav-item ms-2">
-                            <a class="nav-link" href="#learn2"
+                            <a class="nav-link" href="#wordMeaning"
                                 >학습: 의미 맞추기</a
                             >
                         </li>
                         <li class="nav-item ms-2">
-                            <a class="nav-link" href="#learn3"
+                            <a class="nav-link" href="#meaningConnection"
                                 >학습: 의미 연결</a
                             >
                         </li>
@@ -130,33 +130,131 @@
             </section>
 
             <!-- 학습하기: 단어 맞추기 섹션 -->
-            <section id="learn1">
+            <section id="wordMatching">
                 <div class="h4">
-                    <span class="engFont">www.</span>학습하기: 단어 맞추기
+                    <span class="engFont">www.</span>학습하기:
+                    <strong>단어 맞추기</strong>
                 </div>
                 <hr
                     class="border border-2 border-primary opacity-100"
                     style="width: 360px" />
 
-                <div>단어 맞추기 내용</div>
+                <div class="card">
+                    <div class="card-body" style="height: 500px">
+                        <div class="fs-5 mb-3 badge rounded-pill bg-primary">
+                            <i class="bi bi-chat-quote-fill"></i> 하이염~
+                        </div>
+                        <br />
+                        <div class="fs-5 mb-3 badge rounded-pill bg-dark">
+                            <i class="bi bi-robot"></i> 프로젝트를 성공적으로
+                            마무리하려면 팀원들과의 협력이 중요하다.
+                        </div>
+                        <br />
+                        <div class="fs-5 mb-3 badge rounded-pill bg-success">
+                            <i class="bi bi-check-circle-fill"></i> 정답입니다.
+                        </div>
+                        <br />
+                        <div class="fs-5 mb-1 badge rounded-pill bg-danger">
+                            <i class="bi bi-exclamation-circle-fill"></i>
+                            오답입니다. 정답은 '팀원'입니다.
+                        </div>
+                        <br />
+                        <button
+                            class="btn btn-link btn-sm text-decoration-none text-primary ms-4">
+                            <i class="bi bi-arrow-return-right"></i> 계속하기
+                        </button>
+                        <button
+                            class="btn btn-link btn-sm text-decoration-none text-muted ms-1">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                            화면지우기
+                        </button>
+                    </div>
+                    <div class="card-footer">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                채팅을 입력하세요.
+                            </span>
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="learnMatchingInput" />
+                            <button
+                                class="btn btn-primary"
+                                id="learnMatchingBtn">
+                                전송
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- 학습하기: 의미 맞추기 섹션 -->
-            <section id="learn2">
+            <section id="wordMeaning">
                 <div class="h4">
-                    <span class="engFont">www.</span>학습하기: 의미 맞추기
+                    <span class="engFont">www.</span>학습하기:
+                    <strong>의미 맞추기</strong>
                 </div>
                 <hr
                     class="border border-2 border-primary opacity-100"
                     style="width: 360px" />
 
-                <div>의미 맞추기 섹션</div>
+                <div class="card">
+                    <div class="card-body" style="height: 500px">
+                        <div class="fs-5 mb-3 badge rounded-pill bg-primary">
+                            <i class="bi bi-chat-quote-fill"></i> 하이염~
+                        </div>
+                        <br />
+                        <div class="fs-5 mb-3 badge rounded-pill bg-dark">
+                            <i class="bi bi-robot"></i> '팀원'의 의미는
+                            무엇일까요?
+                        </div>
+                        <br />
+                        <div class="fs-5 mb-3 badge rounded-pill bg-success">
+                            <i class="bi bi-check-circle-fill"></i> 정답입니다.
+                        </div>
+                        <br />
+                        <div class="fs-5 mb-3 badge rounded-pill bg-warning">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            보완이 필요합니다.
+                        </div>
+                        <br />
+                        <div class="fs-5 mb-1 badge rounded-pill bg-danger">
+                            <i class="bi bi-exclamation-circle-fill"></i>
+                            오답입니다.
+                        </div>
+                        <br />
+                        <button
+                            class="btn btn-link btn-sm text-decoration-none text-primary ms-4">
+                            <i class="bi bi-arrow-return-right"></i> 계속하기
+                        </button>
+                        <button
+                            class="btn btn-link btn-sm text-decoration-none text-muted ms-1">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                            화면지우기
+                        </button>
+                    </div>
+                    <div class="card-footer">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                채팅을 입력하세요.
+                            </span>
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="wordMeaningInput" />
+                            <button class="btn btn-primary" id="wordMeaningBtn">
+                                전송
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- 학습하기: 의미 연결하기 섹션 -->
-            <section id="learn3">
+            <section id="meaningConnection">
                 <div class="h4">
-                    <span class="engFont">www.</span>학습하기: 의미 연결하기
+                    <span class="engFont">www.</span>학습하기:
+                    <strong>의미 연결하기</strong>
                 </div>
                 <hr
                     class="border border-2 border-primary opacity-100"

@@ -366,6 +366,23 @@ const wordManagement = {
 };
 
 
+// 학습하기 관련 함수
+// 학습하기: 단어 맞추기 (승은)
+const wordMatching = {
+
+}
+
+// 학습하기: 의미 맞추기 (여원)
+const wordMeaning = {
+
+}
+
+// 학습하기: 의미 연결하기 (석인)
+const meaningConnection = {
+
+}
+
+
 // API 키 관리 함수
 const apiKeyManagement = {
     saveApiKey(apiKey) {
