@@ -14,8 +14,8 @@
     font-style: normal;
 }
 
-#content,
-#word {
+header,
+#content {
     -webkit-touch-callout: none;
     user-select: none;
     -moz-user-select: none;
