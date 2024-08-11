@@ -1,4 +1,4 @@
-@import url("../fonts/Pretendard/pretendardvariable.css");
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css");
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@600&display=swap");
 
 * {
@@ -12,4 +12,38 @@
     font-family: "Montserrat", sans-serif;
     font-weight: 600;
     font-style: normal;
+}
+
+.chat-container {
+    height: 500px;
+    position: relative;
+    overflow: hidden;
+}
+
+.chat-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow-y: scroll;
+    padding-right: 20px; /* 스크롤바 너비만큼 패딩 추가 */
+    padding-left: 20px;
+    padding-top: 20px;
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+.chat-area::-webkit-scrollbar {
+    width: 0px; /* WebKit 기반 브라우저의 스크롤바 숨김 */
+}
+
+#chatArea .rounded-pill {
+    border-radius: 20px !important;
+    padding: 10px 15px;
+}
+
+/* Firefox용 스크롤바 숨김 */
+.chat-area {
+    scrollbar-width: none;
 }

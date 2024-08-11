@@ -12,14 +12,8 @@ const DOM = {
     highlightSwitch: document.getElementById('highlightSwitch'),
     saveSettingsBtn: document.getElementById('saveSettingsBtn'),
     wordSearchInput: document.getElementById('wordSearchInput'),
-    wordTableBody: document.getElementById('wordTableBody'),
+    wordCardBody: document.getElementById('wordCardBody'),
     pagination: document.getElementById('pagination'),
-    learnWordQuiz: document.getElementById('learnWordQuiz'),
-    learnWordExplain: document.getElementById('learnWordExplain'),
-    learnWordQuizBtn: document.getElementById('learnWordQuizBtn'),
-    learnWordInputBox: document.getElementById('learnWordInputBox'),
-    learnWordInput: document.getElementById('learnWordInput'),
-    learnWordBtn: document.getElementById('learnWordBtn'),
     dbSize: document.getElementById('dbSize'),
     dbUsagePercentage: document.getElementById('dbUsagePercentage'),
     totalWordCount: document.getElementById('totalWordCount')
@@ -29,8 +23,7 @@ const DOM = {
 let currentPage = 1;
 let words = [];
 let filteredWords = [];
-let wordForQuiz = {};
-let isCorrected = false;
+
 
 // 유틸리티 함수
 const utils = {
@@ -76,19 +69,6 @@ const utils = {
         });
     },
 
-    getWeightedRandomItem(list, weightKey) {
-        const totalWeight = list.reduce((sum, item) => sum + (item[weightKey] || 1), 0);
-        let randomWeight = Math.random() * totalWeight;
-
-        for (let item of list) {
-            randomWeight -= (item[weightKey] || 1);
-            if (randomWeight <= 0) {
-                return item;
-            }
-        }
-        return list[0];
-    },
-
     getSectionFromUrl() {
         const urlParams = new URLSearchParams(window.location.search);
         return urlParams.get('section');
@@ -108,8 +88,11 @@ const wordManagement = {
             this.displayWordList();
         } catch (error) {
             console.error('단어 목록 표시 중 오류 발생:', error);
-            DOM.wordTableBody.innerHTML = `
-                <tr><td colspan="4" class="text-center text-danger">오류: ${error.message}</td></tr>
+            DOM.wordCardBody.innerHTML = `
+                <div class="alert alert-dismissible alert-danger">
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    오류: ${error.message}
+                </div>
             `;
         }
     },
@@ -122,19 +105,186 @@ const wordManagement = {
         // 총 단어 수 업데이트
         DOM.totalWordCount.textContent = filteredWords.length;
 
-        DOM.wordTableBody.innerHTML = paginatedWords.length === 0
-            ? '<tr><td colspan="5" class="text-center">표시할 단어가 없습니다.</td></tr>'
+        DOM.wordCardBody.innerHTML = paginatedWords.length === 0
+            ? '<div class="text-center">표시할 단어가 없습니다.</div>'
             : paginatedWords.map((word, index) => `
-                <tr>
-                    <th scope="row">${startIndex + index + 1}</th>
-                    <td>${word.term}</td>
-                    <td>${word.definition}</td>
-                    <td>${utils.formatDate(word.addedDate)}</td>
-                    <td><button class="btn btn-sm btn-danger delete-word-btn" data-word="${word.term}"><i class="bi bi-journal-x"></i> 삭제</button></td>
-                </tr>
-            `).join('');
+            <div class="col">
+                <div class="card border-primary h-100">
+                    <div class="card-header">
+                        <div class="row">
+                            <div class="col">
+                                #<span>${startIndex + index + 1}</span> <span class="h5 fw-bold text-primary">${word.term}</span>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-sm btn-link text-danger text-decoration-none p-0 delete-word-btn" data-word="${word.term}">삭제</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            <strong>의미: </strong>${word.definition}
+                        </p>
+                        ${word.example ? `
+                            <p class="card-text">
+                                <strong>예문: </strong>${word.example}
+                            </p>
+                        ` : ''}
+                        <div class="memo-section" data-word="${word.term}">
+                            ${this.renderMemoSection(word)}
+                        </div>
+                    </div>
+                    <div class="card-footer text-muted small">
+                        <div class="row">
+                            <div class="col">
+                                <span>${utils.formatDate(word.addedDate)}</span>
+                            </div>
+                            <div class="col-auto">
+                                <span>${word.count}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
 
         this.displayPagination();
+    },
+
+    renderMemoSection(word) {
+        if (word.usermemo) {
+            return `
+                <hr />
+                <p class="card-text memo-content">
+                    <strong>메모: </strong><span class="memo-text">${word.usermemo}</span>
+                </p>
+                <div class="memo-actions">
+                    <button class="btn btn-sm btn-outline-dark edit-memo-btn">수정</button>
+                    <button class="btn btn-sm btn-outline-danger delete-memo-btn">삭제</button>
+                </div>
+            `;
+        } else {
+            return `
+                <hr />
+                <div class="memo-actions">
+                    <button class="btn btn-sm btn-outline-primary add-memo-btn">메모 추가</button>
+                </div>
+            `;
+        }
+    },
+
+    handleMemoAction(event) {
+        const target = event.target;
+        const memoSection = target.closest('.memo-section');
+        if (!memoSection) {
+            console.error('메모 섹션을 찾을 수 없습니다.');
+            return;
+        }
+        const wordTerm = memoSection.dataset.word;
+        if (!wordTerm) {
+            console.error('단어 정보를 찾을 수 없습니다.');
+            return;
+        }
+
+        if (target.classList.contains('add-memo-btn')) {
+            this.handleAddMemo(memoSection, wordTerm);
+        } else if (target.classList.contains('edit-memo-btn')) {
+            this.handleEditMemo(memoSection, wordTerm);
+        } else if (target.classList.contains('delete-memo-btn')) {
+            this.handleDeleteMemo(memoSection, wordTerm);
+        }
+    },
+
+    handleAddMemo(memoSection, wordTerm) {
+        memoSection.innerHTML = this.renderMemoEditForm('');
+        this.setupMemoFormListeners(memoSection, wordTerm);
+    },
+
+    handleEditMemo(memoSection, wordTerm) {
+        const memoTextElement = memoSection.querySelector('.memo-text');
+        if (!memoTextElement) {
+            console.error('메모 텍스트를 찾을 수 없습니다.');
+            return;
+        }
+        const currentMemo = memoTextElement.textContent;
+        memoSection.innerHTML = this.renderMemoEditForm(currentMemo);
+        this.setupMemoFormListeners(memoSection, wordTerm);
+    },
+
+    handleDeleteMemo(memoSection, wordTerm) {
+        if (confirm('메모를 삭제하시겠습니까?')) {
+            this.updateWordMemo(wordTerm, '')
+                .then(() => {
+                    utils.showNotification('메모가 삭제되었습니다.', 'primary');
+                    this.refreshWordCard(wordTerm);
+                })
+                .catch(error => {
+                    console.error('메모 삭제 중 오류:', error);
+                    utils.showNotification('메모 삭제 중 오류가 발생했습니다.', 'danger');
+                });
+        }
+    },
+
+    renderMemoEditForm(currentMemo) {
+        return `
+            <hr />
+            <div class="memo-edit-form">
+                <textarea class="form-control mb-2" rows="3">${currentMemo}</textarea>
+                <button class="btn btn-sm btn-primary save-memo-btn">저장</button>
+                <button class="btn btn-sm btn-secondary cancel-memo-btn">취소</button>
+            </div>
+        `;
+    },
+
+    setupMemoFormListeners(memoSection, wordTerm) {
+        const saveBtn = memoSection.querySelector('.save-memo-btn');
+        const cancelBtn = memoSection.querySelector('.cancel-memo-btn');
+
+        saveBtn.addEventListener('click', async () => {
+            const newMemo = memoSection.querySelector('textarea').value.trim();
+            try {
+                await this.updateWordMemo(wordTerm, newMemo);
+                utils.showNotification('메모가 저장되었습니다.', 'primary');
+                this.refreshWordCard(wordTerm);
+            } catch (error) {
+                utils.showNotification('메모 저장 중 오류가 발생했습니다.', 'danger');
+            }
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            this.refreshWordCard(wordTerm);
+        });
+    },
+
+    async updateWordMemo(wordTerm, newMemo) {
+        const response = await utils.sendMessageToBackground({
+            action: 'updateWordMemo',
+            word: wordTerm,
+            memo: newMemo
+        });
+
+        if (!response.success) {
+            throw new Error(response.error || '메모 업데이트에 실패했습니다.');
+        }
+    },
+
+    refreshWordCard(wordTerm) {
+        const wordIndex = words.findIndex(word => word.term === wordTerm);
+        if (wordIndex !== -1) {
+            utils.sendMessageToBackground({
+                action: 'getWord',
+                word: wordTerm
+            }).then(response => {
+                if (response.success) {
+                    words[wordIndex] = response.word;
+                    filteredWords = [...words];
+                    this.displayWordList();
+                } else {
+                    console.error('단어 정보를 가져오는데 실패했습니다:', response.error);
+                }
+            }).catch(error => {
+                console.error('단어 정보를 가져오는 중 오류 발생:', error);
+            });
+        }
     },
 
     displayPagination() {
@@ -191,7 +341,8 @@ const wordManagement = {
         query = query.toLowerCase();
         filteredWords = words.filter(word =>
             word.term.toLowerCase().includes(query) ||
-            word.definition.toLowerCase().includes(query)
+            word.definition.toLowerCase().includes(query) ||
+            (word.usermemo && word.usermemo.toLowerCase().includes(query))
         );
         currentPage = 1;
         this.displayWordList();
@@ -205,7 +356,7 @@ const wordManagement = {
                     throw new Error(response.error || '단어 삭제에 실패했습니다.');
                 }
                 await this.fetchWordList();
-                utils.showNotification('단어가 성공적으로 삭제되었습니다!', 'success');
+                utils.showNotification('단어가 성공적으로 삭제되었습니다!', 'primary');
             } catch (error) {
                 console.error('단어 삭제 중 오류 발생:', error);
                 utils.showNotification(error.message || '단어 삭제 중 오류가 발생했습니다.', 'danger');
@@ -214,88 +365,515 @@ const wordManagement = {
     }
 };
 
-// 학습 관련 함수
-const learningManagement = {
-    async setQuiz() {
-        this.resetQuizUI();
+
+// 학습하기 관련 함수
+// 학습하기: 단어 맞추기
+const wordMatching = {
+    currentWord: null,
+    usedWords: [],
+    words: [],
+    chatArea: document.querySelector('#wordMatching .card-body'),
+    userInput: document.getElementById('learnMatchingInput'),
+    sendBtn: document.getElementById('learnMatchingBtn'),
+
+    async initialize() {
+        this.clearChatArea();
+        this.sendBtn.addEventListener('click', this.sendMessage.bind(this));
+        this.userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.sendMessage();
+        });
+
+        await this.loadWords();
+
+        if (this.words.length > 0) {
+            this.startLearningSession();
+        } else {
+            this.showBotMessage("단어가 로드되지 않았습니다. 단어장을 확인해 주세요.");
+        }
+    },
+
+    async loadWords() {
         try {
-            const response = await utils.sendMessageToBackground({ action: 'getRecentWords', limit: Infinity });
-            if (!response || !response.success) {
-                throw new Error(response ? response.error : '응답이 없습니다.');
-            }
-            const wordLists = response.words;
-            if (wordLists.length === 0) {
-                this.setEmptyQuizState();
-            } else {
-                this.setActiveQuizState(wordLists);
-            }
+            const response = await chrome.runtime.sendMessage({ action: 'getRecentWords' });
+            if (response.success) this.words = response.words;
+            else console.error('단어 로드 실패:', response.error || '단어 없음');
         } catch (error) {
-            console.error('단어 목록 받아오는 중 오류 발생:', error);
-            this.setErrorQuizState();
+            console.error('단어 로드 중 오류 발생:', error);
         }
     },
 
-    resetQuizUI() {
-        DOM.learnWordInput.classList.remove("border-success", "border-danger");
-        DOM.learnWordInputBox.classList.remove("border-success", "border-danger");
-        DOM.learnWordQuizBtn.innerText = '다음 문제 풀기';
-        DOM.learnWordInput.value = '';
-        DOM.learnWordInput.disabled = false;
-        DOM.learnWordBtn.innerText = '정답 제출';
-        isCorrected = false;
+    startLearningSession() {
+        this.showBotMessage("지금부터 학습하기를 시작하겠습니다.");
+        this.loadNewWord();
     },
 
-    setEmptyQuizState() {
-        DOM.learnWordQuiz.textContent = '저장된 단어가 없습니다.';
-        DOM.learnWordExplain.textContent = "단어를 추가한 후 다시 시도해주세요.";
-        DOM.learnWordInput.disabled = true;
-        DOM.learnWordBtn.disabled = true;
-    },
+    loadNewWord() {
+        const availableWords = this.words.filter(word => !this.usedWords.includes(word.term));
 
-    setActiveQuizState(wordLists) {
-        wordForQuiz = utils.getWeightedRandomItem(wordLists, 'count');
-        DOM.learnWordQuiz.textContent = wordForQuiz.definition;
-        DOM.learnWordExplain.textContent = "이 의미를 갖는 단어를 적어주세요.";
-        DOM.learnWordInput.disabled = false;
-        DOM.learnWordBtn.disabled = false;
-    },
-
-    setErrorQuizState() {
-        DOM.learnWordQuiz.textContent = '오류가 발생했습니다.';
-        DOM.learnWordExplain.textContent = "잠시 후 다시 시도해주세요.";
-        DOM.learnWordInput.disabled = true;
-        DOM.learnWordBtn.disabled = true;
-    },
-
-    checkAnswer() {
-        const userInput = DOM.learnWordInput.value.trim();
-        if (userInput) {
-            DOM.learnWordInput.classList.remove("border-success", "border-danger");
-            DOM.learnWordInputBox.classList.remove("border-success", "border-danger");
-            if (userInput.toLowerCase() === wordForQuiz.term.toLowerCase()) {
-                this.setCorrectAnswerState();
-            } else {
-                this.setIncorrectAnswerState();
-            }
+        if (availableWords.length === 0) {
+            this.showBotMessage("모든 단어를 다 학습했습니다!");
+            return;
         }
+
+        this.currentWord = availableWords[Math.floor(Math.random() * availableWords.length)];
+        this.usedWords.push(this.currentWord.term);
+
+        this.showBotMessage(`이 의미를 가진 단어는 무엇일까요?\n${this.currentWord.definition}`);
     },
 
-    setCorrectAnswerState() {
-        isCorrected = true;
-        DOM.learnWordInput.classList.add("border-success");
-        DOM.learnWordInputBox.classList.add("border-success");
-        DOM.learnWordExplain.textContent = "정답입니다!";
-        DOM.learnWordInput.disabled = true;
-        DOM.learnWordBtn.innerText = '다음 문제';
+    sendMessage() {
+        const userMessage = this.userInput.value.trim();
+        if (!userMessage) return;
+
+        this.showUserMessage(userMessage);
+        this.userInput.value = '';
+
+        const isCorrect = userMessage.toLowerCase() === this.currentWord.term.toLowerCase();
+        this.showBotMessage(isCorrect ? '정답입니다!' : `오답입니다. 정답은 '${this.currentWord.term}'입니다.`, isCorrect);
+
+        this.showContinueButtons();
     },
 
-    setIncorrectAnswerState() {
-        DOM.learnWordInput.classList.add("border-danger");
-        DOM.learnWordInputBox.classList.add("border-danger");
-        DOM.learnWordExplain.textContent = "오답입니다. 다시 시도해보세요.";
-        DOM.learnWordBtn.innerText = '다시 풀기';
+    showUserMessage(message) {
+        this.appendMessage(message, 'd-flex justify-content-end mb-3', 'bg-primary');
+    },
+
+    showBotMessage(message, isCorrect = null) {
+        let bgClass = 'bg-dark', icon = 'bi-robot';
+        if (isCorrect !== null) {
+            bgClass = isCorrect ? 'bg-success' : 'bg-danger';
+            icon = isCorrect ? 'bi bi-check-circle-fill' : 'bi bi-exclamation-circle-fill';
+        }
+        this.appendMessage(`<i class="${icon}"></i> ${message}`, 'd-flex justify-content-start mb-3', bgClass);
+    },
+
+    appendMessage(content, classNames, bgClass) {
+        const messageElement = document.createElement('div');
+        messageElement.className = `${classNames}`;
+        messageElement.innerHTML = `<div class="fs-5 badge rounded-pill ${bgClass}">${content}</div>`;
+        this.chatArea.appendChild(messageElement);
+        this.scrollToBottom();
+    },
+
+    showContinueButtons() {
+        const buttonElement = document.createElement('div');
+        buttonElement.className = 'mt-3 continue-button-container';
+        buttonElement.innerHTML = `
+            <button class="btn btn-link btn-sm text-decoration-none text-primary ms-4 continue-btn">
+                <i class="bi bi-arrow-return-right"></i> 계속하기
+            </button>
+            <button class="btn btn-link btn-sm text-decoration-none text-muted ms-1 clear-btn">
+                <i class="bi bi-arrow-counterclockwise"></i> 화면지우기
+            </button>
+        `;
+        this.chatArea.appendChild(buttonElement);
+
+        buttonElement.querySelector('.continue-btn').addEventListener('click', () => {
+            this.loadNewWord();
+            buttonElement.remove();
+        });
+
+        buttonElement.querySelector('.clear-btn').addEventListener('click', () => {
+            this.clearChatArea();
+            this.startLearningSession(); // 화면 지우기 후 학습 세션을 다시 시작
+        });
+
+        this.scrollToBottom();
+    },
+
+    clearChatArea() {
+        this.chatArea.innerHTML = '';
+    },
+
+    scrollToBottom() {
+        this.chatArea.scrollTop = this.chatArea.scrollHeight;
     }
 };
+
+wordMatching.initialize();
+
+// 학습하기: 의미 맞추기
+const wordMeaning = {
+    currentWord: null,
+    wordLists: [],
+    wordMeaningChat: document.getElementById('wordMeaningChat'),
+    wordMeaningInput: document.getElementById('wordMeaningInput'),
+    wordMeaningBtn: document.getElementById('wordMeaningBtn'),
+
+    setInputDisabled(isDisabled) {
+        this.wordMeaningInput.disabled = isDisabled;
+        this.wordMeaningBtn.disabled = isDisabled;
+    },
+
+    initialize() {
+        this.wordMeaningBtn.addEventListener('click', () => this.handleUserInput());
+        this.wordMeaningInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.handleUserInput();
+        });
+
+        this.startQuiz();
+    },
+
+    async startQuiz() {
+        await this.getWords();
+
+        if (this.wordLists.length === 0) {
+            this.addMessage('저장된 단어가 없습니다.', 'chat');
+        } else {
+            this.addMessage('의미 맞추기 퀴즈를 시작합니다.', 'chat');
+            this.setQuiz();
+        }
+    },
+
+    async getWords() {
+        const response = await utils.sendMessageToBackground({ action: 'getRecentWords', limit: Infinity });
+        if (response.success && response.words.length >= 0) {
+            this.wordLists = response.words;
+        } else {
+            throw new Error("단어를 불러오는데 실패했습니다.");
+        }
+    },
+
+    addMessage(message, type, result = null) {
+        const messageDiv = document.createElement('div');
+
+        let bgType, alignment, iconType;
+        if (type === 'user') {
+            bgType = 'bg-primary';
+            alignment = 'justify-content-end';
+            iconType = 'bi-chat-quote-fill';
+        } else if (type === 'chat') {
+            alignment = 'justify-content-start'
+            if (result === 'success') {
+                bgType = `bg-${result}`;
+                iconType = 'bi-check-circle-fill';
+            } else if (result === 'warning') {
+                bgType = `bg-${result}`;
+                iconType = 'bi-exclamation-triangle-fill';
+            } else if (result === 'danger') {
+                bgType = `bg-${result}`;
+                iconType = 'bi-exclamation-circle-fill';
+            } else {
+                bgType = 'bg-dark';
+                iconType = 'bi-robot';
+            }
+        }
+
+        messageDiv.className = `mb-3 d-flex ${alignment}`;
+        messageDiv.innerHTML = `
+            <div class="fs-5 rounded rounded-4 text-white py-1 px-3 ${bgType}" style="max-width: 80%">
+                <i class="bi ${iconType}"></i> ${message}
+            </div>
+        `;
+
+        this.wordMeaningChat.appendChild(messageDiv);
+
+        // 응답일 경우, 계속하기 & 화면지우기 버튼 생성
+        if (result) {
+            // 입력 제한
+            this.setInputDisabled(true);
+
+            const buttonDiv = document.createElement('div');
+            buttonDiv.className = 'mt-1 continue-button-container';
+
+            const continueButton = document.createElement('button');
+            continueButton.className = 'btn btn-link btn-sm text-decoration-none text-primary ms-4';
+            continueButton.innerHTML = '<i class="bi bi-arrow-return-right"></i> 계속하기';
+
+            const clearButton = document.createElement('button');
+            clearButton.className = 'btn btn-link btn-sm text-decoration-none text-muted ms-1';
+            clearButton.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i> 화면지우기';
+
+            buttonDiv.appendChild(continueButton);
+            buttonDiv.appendChild(clearButton);
+            this.wordMeaningChat.appendChild(buttonDiv);
+
+            continueButton.addEventListener('click', () => {
+                buttonDiv.remove();
+                this.setQuiz();
+            });
+
+            clearButton.addEventListener('click', () => {
+                this.wordMeaningChat.innerHTML = '';
+                this.setQuiz();
+            });
+        }
+
+
+
+        // 스크롤을 아래로 이동
+        this.wordMeaningChat.scrollTop = this.wordMeaningChat.scrollHeight;
+    },
+
+    getWeightedRandomItem(list, weightKey) {
+        const totalWeight = list.reduce((sum, item) => sum + (item[weightKey] || 1), 0);
+        let randomWeight = Math.random() * totalWeight;
+
+        for (let item of list) {
+            randomWeight -= (item[weightKey] || 1);
+            if (randomWeight <= 0) {
+                return item;
+            }
+        }
+        return list[0];
+    },
+
+    setQuiz() {
+        this.setInputDisabled(false);
+
+        if (this.wordLists.length === 0) {
+            this.addMessage('모든 단어를 학습했습니다!', 'chat');
+            return;
+        }
+
+        this.currentWord = this.getWeightedRandomItem(this.wordLists, 'count');
+        this.wordLists.push(this.currentWord.term);
+
+        const chatQuiz = `단어의 의미를 맞춰보세요: ${this.currentWord.term}`;
+        this.addMessage(chatQuiz, 'chat');
+    },
+
+    async handleUserInput() {
+        const userInput = this.wordMeaningInput.value.trim();
+
+        if (userInput) {
+            this.addMessage(userInput, 'user');
+            this.wordMeaningInput.value = '';
+
+            prompt = `
+                사용자는 여러 텍스트들과 그 텍스트의 의미를 공부하고 있고,
+                텍스트만 보고 텍스트의 의미를 맞추는 퀴즈를 하고 있어.
+
+                텍스트: "${this.currentWord.term}"
+                텍스트의 의미: "${this.currentWord.definition}"
+                사용자 입력: "${userInput}"
+                
+                위의 '텍스트'와 '텍스트의 의미', '사용자 입력'에 대하여
+                사용자가 '텍스트'를 보고 작성한 '사용자 입력'이 '텍스트의 의미'와 얼마나 일치하는지 백분율로 평가해줘.
+                만약 '사용자 입력'에 '텍스트'가 들어가있다면 답변을 '-1'로 해줘.
+                
+                반드시 단순히 숫자로만 답변야해. 예: 78
+                `;
+
+            const response = await this.callGeminiAPI(prompt);
+
+            let chatAnswer, chatResult
+            if (response === '-1') {
+                chatAnswer = '단어를 그대로 작성하면 안 됩니다.';
+                chatResult = 'warning';
+            } else if (response >= 85) {
+                chatAnswer = '공부를 열심히 하셨네요!';
+                chatResult = 'success';
+            } else if (response >= 50) {
+                chatAnswer = `조금 더 공부가 필요합니다.<br> 단어장에 저장된 의미는 '${this.currentWord.definition}'입니다.`
+                chatResult = 'warning';
+            } else {
+                chatAnswer = `아닙니다.<br> 단어장에 저장된 의미는 '${this.currentWord.definition}'입니다.`
+                chatResult = 'danger';
+            }
+            this.addMessage(chatAnswer, 'chat', chatResult);
+        }
+    },
+
+    async callGeminiAPI(prompt) {
+        try {
+            const response = await utils.sendMessageToBackground({
+                action: 'callGeminiAPI',
+                prompt: prompt
+            });
+            if (!response.success) {
+                throw new Error(response.error || 'API 호출 실패');
+            }
+            return response.response;
+        } catch (error) {
+            console.error('Gemini API 호출 중 오류 발생:', error);
+            return '죄송합니다. 응답을 생성하는 데 문제가 발생했습니다.';
+        }
+    }
+}
+
+// 학습하기: 문장 만들기
+const chatBot = {
+    isLearning: false,
+    currentWord: null,
+    chatArea: document.getElementById('chatArea'),
+    userInput: document.getElementById('userInput'),
+    sendBtn: document.getElementById('sendBtn'),
+    startLearningBtn: document.getElementById('startLearningBtn'),
+    endLearningBtn: document.getElementById('endLearningBtn'),
+    relatedWords: [],
+    currentProblemIndex: 0,
+
+    initialize() {
+        this.sendBtn.addEventListener('click', () => this.sendMessage());
+        this.userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.sendMessage();
+        });
+        this.startLearningBtn.addEventListener('click', () => this.startLearning());
+        this.endLearningBtn.addEventListener('click', () => this.endLearning());
+
+        // 초기 상태 설정
+        this.setInputState(false);
+    },
+
+    setInputState(enabled) {
+        this.userInput.disabled = !enabled;
+        this.sendBtn.disabled = !enabled;
+        if (enabled) {
+            this.userInput.placeholder = "답변을 입력하세요";
+        } else {
+            this.userInput.placeholder = "학습을 시작하려면 '학습 시작' 버튼을 클릭하세요";
+        }
+    },
+
+    async startLearning() {
+        this.isLearning = true;
+        this.startLearningBtn.style.display = 'none';
+        this.endLearningBtn.style.display = 'inline-block';
+        this.chatArea.innerHTML = '';
+        this.setInputState(true);  // 입력창 활성화
+        await this.selectRandomWord();
+        await this.getRelatedWords();
+        this.currentProblemIndex = 0;
+        this.presentNextProblem();
+    },
+
+    async getRelatedWords() {
+        const response = await utils.sendMessageToBackground({
+            action: 'getRelatedWords',
+            word: this.currentWord,
+            count: 3
+        });
+        if (response.success) {
+            this.relatedWords = response.words;
+        } else {
+            console.error('연관 단어를 가져오는데 실패했습니다:', response.error);
+            this.relatedWords = [];
+        }
+    },
+
+    presentNextProblem() {
+        if (this.currentProblemIndex >= this.relatedWords.length) {
+            this.addMessageToChat('gemini', "모든 문제를 완료했습니다! 학습을 종료하시겠습니까?");
+            return;
+        }
+
+        const relatedWord = this.relatedWords[this.currentProblemIndex];
+        const prompt = `
+        다음 단어들을 사용하여 문장을 만들어보세요:`
+            + `<br><br>` +
+            `1. ${this.currentWord.term}`
+            + `<br>` +
+            `<small>${this.currentWord.definition}</small>`
+            + `<br><br>` +
+            `2. ${relatedWord.term}`
+            + `<br>` +
+            `<small>${relatedWord.definition}</small>`
+            ;
+
+        this.addMessageToChat('gemini', prompt);
+    },
+
+    async processUserMessage(message) {
+        const prompt = `
+        학습자가 만든 문장: "${message}"
+        
+        사용해야 할 단어들:
+        1. ${this.currentWord.term}: ${this.currentWord.definition}
+        2. ${this.relatedWords[this.currentProblemIndex].term}: ${this.relatedWords[this.currentProblemIndex].definition}
+        
+        이 문장이 두 단어를 올바르게 사용했는지 평가해주세요. 문장이 적절하다면 칭찬과 함께 다음 문제로 넘어가 주세요. 완전한 문장이 아닐경우 왜 그런지 간단하게만 섦명하고, 다시 만들어 보도록 해주세요. 문장이 부적절하다면 왜 그런지 설명하고, 다시 만들어 보도록 해주세요. 예문 또는 예시는 어떠한 경우에도 절대로 보여주지 마세요. 전혀 관련 없는 단어를 입력했다면 평가를 하지 말고, 다시 만들어 보도록 해주세요. 절대로 HTML태그나 Markdown을 사용하지 마세요.
+        `;
+
+        const response = await this.callGeminiAPI(prompt);
+        this.addMessageToChat('gemini', response);
+
+        if (response.includes("다음 문제로 넘어가") || response.includes("모든 문제를 완료")) {
+            this.currentProblemIndex++;
+            if (this.currentProblemIndex < this.relatedWords.length) {
+                setTimeout(() => this.presentNextProblem(), 2000);
+            } else {
+                this.addMessageToChat('gemini', "모든 문제를 완료했습니다! 학습을 종료하시겠습니까?");
+                this.setInputState(false);  // 모든 문제 완료 시 입력창 비활성화
+            }
+        }
+    },
+
+    endLearning() {
+        this.isLearning = false;
+        this.startLearningBtn.style.display = 'inline-block';
+        this.endLearningBtn.style.display = 'none';
+        this.setInputState(false);  // 입력창 비활성화
+        this.addMessageToChat('gemini', "학습을 종료합니다. 수고하셨습니다!");
+    },
+
+    async selectRandomWord() {
+        const response = await utils.sendMessageToBackground({ action: 'getRecentWords' });
+        if (response.success && response.words.length > 0) {
+            this.currentWord = response.words[Math.floor(Math.random() * response.words.length)];
+        } else {
+            throw new Error("단어를 불러오는데 실패했습니다.");
+        }
+    },
+
+    async sendMessage() {
+        const userMessage = this.userInput.value.trim();
+        if (userMessage) {
+            this.addMessageToChat('user', userMessage);
+            this.userInput.value = '';
+            await this.processUserMessage(userMessage);
+        }
+    },
+
+    async callGeminiAPI(prompt) {
+        try {
+            const response = await utils.sendMessageToBackground({
+                action: 'callGeminiAPI',
+                prompt: prompt
+            });
+            if (!response.success) {
+                throw new Error(response.error || 'API 호출 실패');
+            }
+            return response.response;
+        } catch (error) {
+            console.error('Gemini API 호출 중 오류 발생:', error);
+            return '죄송합니다. 응답을 생성하는 데 문제가 발생했습니다.';
+        }
+    },
+
+    addMessageToChat(sender, message) {
+        const messageElement = document.createElement('div');
+        messageElement.className = 'mb-3 d-flex';
+
+        let bgClass, icon, alignment;
+        if (sender === 'user') {
+            bgClass = 'bg-primary';
+            icon = 'bi bi-chat-quote-fill';
+            alignment = 'justify-content-end';
+        } else {
+            bgClass = 'bg-dark';
+            icon = 'bi-robot';
+            alignment = 'justify-content-start';
+        }
+
+        messageElement.classList.add(alignment);
+
+        messageElement.innerHTML = `
+            <div class="fs-5 rounded rounded-4 text-white py-1 px-3 ${bgClass}" style="max-width: 80%">
+                <i class="me-2 bi ${icon}"></i> ${message}
+            </div>
+        `;
+        this.chatArea.insertBefore(messageElement, this.chatArea.firstChild);
+
+        // 스크롤을 맨 아래로 이동 (역순 flex 때문에 맨 위가 됨)
+        this.chatArea.scrollTop = 0;
+    },
+
+    async sendGeminiMessage(message) {
+        this.addMessageToChat('gemini', message);
+    }
+}
+
 
 // API 키 관리 함수
 const apiKeyManagement = {
@@ -317,14 +895,14 @@ const apiKeyManagement = {
         DOM.apiKeyInput.disabled = true;
         DOM.apiKeySaveBtn.textContent = '저장됨';
         DOM.apiKeySaveBtn.classList.remove('btn-primary');
-        DOM.apiKeySaveBtn.classList.add('btn-success');
+        DOM.apiKeySaveBtn.classList.add('btn-dark');
     },
 
     displayUnsavedState() {
         DOM.apiKeyInput.value = '';
         DOM.apiKeyInput.disabled = false;
         DOM.apiKeySaveBtn.textContent = '저장';
-        DOM.apiKeySaveBtn.classList.remove('btn-success', 'btn-danger');
+        DOM.apiKeySaveBtn.classList.remove('btn-dark', 'btn-danger');
         DOM.apiKeySaveBtn.classList.add('btn-primary');
     },
 
@@ -352,14 +930,14 @@ const apiKeyManagement = {
 
     onMouseOver() {
         DOM.apiKeySaveBtn.textContent = '재설정';
-        DOM.apiKeySaveBtn.classList.remove('btn-success');
+        DOM.apiKeySaveBtn.classList.remove('btn-dark');
         DOM.apiKeySaveBtn.classList.add('btn-danger');
     },
 
     onMouseOut() {
         DOM.apiKeySaveBtn.textContent = '저장됨';
         DOM.apiKeySaveBtn.classList.remove('btn-danger');
-        DOM.apiKeySaveBtn.classList.add('btn-success');
+        DOM.apiKeySaveBtn.classList.add('btn-dark');
     },
 
     async handleApiKeySave() {
@@ -367,7 +945,7 @@ const apiKeyManagement = {
         if (apiKey.length > 0) {
             try {
                 await this.saveApiKey(apiKey);
-                utils.showNotification('API 키가 성공적으로 저장되었습니다.', 'success');
+                utils.showNotification('API 키가 성공적으로 저장되었습니다.', 'primary');
                 this.displaySavedState(apiKey);
                 this.setupResetButtonListeners();
             } catch (error) {
@@ -400,7 +978,7 @@ const settingsManagement = {
             highlight: DOM.highlightSwitch.checked
         };
         chrome.storage.sync.set(settings, () => {
-            utils.showNotification('설정이 저장되었습니다.', 'success');
+            utils.showNotification('설정이 저장되었습니다.', 'primary');
         });
     },
 
@@ -470,23 +1048,17 @@ function setupEventListeners() {
     DOM.apiKeySaveBtn.addEventListener('click', () => apiKeyManagement.handleApiKeySave());
     DOM.saveSettingsBtn.addEventListener('click', () => settingsManagement.saveSettings());
     DOM.wordSearchInput.addEventListener('input', (e) => wordManagement.searchWords(e.target.value));
-    DOM.wordTableBody.addEventListener('click', (event) => {
+    DOM.wordCardBody.addEventListener('click', (event) => {
         if (event.target.classList.contains('delete-word-btn')) {
             const word = event.target.dataset.word;
             wordManagement.handleDeleteWord(word);
         }
     });
-    DOM.learnWordQuizBtn.addEventListener('click', () => learningManagement.setQuiz());
-    DOM.learnWordBtn.addEventListener('click', () => {
-        if (!isCorrected) {
-            learningManagement.checkAnswer();
-        } else {
-            learningManagement.setQuiz();
-        }
-    });
-    DOM.learnWordInput.addEventListener('keypress', (event) => {
-        if (event.key === 'Enter' && !isCorrected) {
-            learningManagement.checkAnswer();
+    DOM.wordCardBody.addEventListener('click', (event) => {
+        if (event.target.classList.contains('add-memo-btn') ||
+            event.target.classList.contains('edit-memo-btn') ||
+            event.target.classList.contains('delete-memo-btn')) {
+            wordManagement.handleMemoAction(event);
         }
     });
 }
@@ -498,6 +1070,8 @@ async function initialize() {
     pageManagement.initializePage();
     setupEventListeners();
     pageManagement.setupNavigationListeners();
+    chatBot.initialize();
+    wordMeaning.initialize();
 }
 
 // 페이지 로드 시 초기화

@@ -7,7 +7,7 @@
         <link rel="stylesheet" href="../libs/bootstrap.min.css" />
         <link
             rel="stylesheet"
-            href="../fonts/Bootstrap-icons/bootstrap-icons.min.css" />
+            href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
         <link rel="stylesheet" href="options.css" />
     </head>
     <body>
@@ -43,10 +43,19 @@
                             <a class="nav-link" href="#wordList">단어장</a>
                         </li>
                         <li class="nav-item ms-2">
-                            <a class="nav-link" href="#learn">학습하기</a>
+                            <a class="nav-link" href="#wordMatching"
+                                >학습: 단어 맞추기</a
+                            >
                         </li>
                         <li class="nav-item ms-2">
-                            <a class="nav-link" href="#help">도움말</a>
+                            <a class="nav-link" href="#wordMeaning"
+                                >학습: 의미 맞추기</a
+                            >
+                        </li>
+                        <li class="nav-item ms-2">
+                            <a class="nav-link" href="#chatBot"
+                                >학습: 문장 만들기</a
+                            >
                         </li>
                     </ul>
 
@@ -55,15 +64,18 @@
                         <a class="nav-link mx-2 text-muted" href="#settings"
                             >환경설정</a
                         >
+                        <a class="nav-link mx-2 text-muted" href="#help"
+                            >도움말</a
+                        >
                         <a class="nav-link mx-2 text-muted" href="#about"
                             >정보</a
                         >
-                        <a
+                        <!-- <a
                             class="nav-link mx-2 text-muted disabled"
                             href="#"
                             target="_blank"
                             >홈페이지</a
-                        >
+                        > -->
                     </div>
                 </div>
             </div>
@@ -81,35 +93,33 @@
                 "></div>
             <!-- 단어장 섹션 -->
             <section id="wordList">
-                <h1><span class="engFont">Word Wise Web: </span> 단어장</h1>
-                <hr />
+                <div class="h4"><span class="engFont">www.</span>단어장</div>
+                <hr
+                    class="border border-2 border-primary opacity-100"
+                    style="width: 180px" />
                 <div class="mb-3">
                     <p>
-                        총 단어 수:
+                        저장된 총 단어 수:
                         <span id="totalWordCount" class="fw-bold">0</span>개
                     </p>
                 </div>
-                <div class="mb-3">
-                    <input
-                        type="text"
-                        id="wordSearchInput"
-                        class="form-control"
-                        placeholder="검색은 대소문자를 구분하지 않으며, 단어와 의미 모두에서 검색어를 찾습니다." />
+                <div class="mb-4">
+                    <div class="input-group mb-3">
+                        <span class="input-group-text"
+                            ><i class="bi bi-search"></i
+                        ></span>
+                        <input
+                            type="text"
+                            id="wordSearchInput"
+                            class="form-control form-control-lg"
+                            placeholder="검색은 대소문자를 구분하지 않으며, 단어와 의미 모두에서 검색어를 찾습니다." />
+                    </div>
                 </div>
-                <table class="table table-striped table-hover mb-3">
-                    <thead>
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">단어</th>
-                            <th scope="col">의미</th>
-                            <th scope="col">추가된 날짜</th>
-                            <th scope="col">삭제</th>
-                        </tr>
-                    </thead>
-                    <tbody id="wordTableBody">
-                        <!-- 단어 목록이 여기 동적으로 추가됨 -->
-                    </tbody>
-                </table>
+                <div
+                    id="wordCardBody"
+                    class="row row-cols-1 row-cols-md-3 g-4 mb-5">
+                    <!-- 단어 목록이 여기 동적으로 추가됨 -->
+                </div>
                 <nav>
                     <ul
                         class="pagination justify-content-center"
@@ -119,47 +129,154 @@
                 </nav>
             </section>
 
-            <!-- 학습하기 섹션 -->
-            <section id="learn">
-                <h1><span class="engFont">Word Wise Web: </span> 학습하기</h1>
-                <hr />
+            <!-- 학습하기: 단어 맞추기 섹션 -->
+            <!-- <section id="wordMatching">
+                <div class="h4">
+                    <span class="engFont">www.</span>학습하기:
+                    <strong>단어 맞추기</strong>
+                </div>
+                <hr
+                    class="border border-2 border-primary opacity-100"
+                    style="width: 360px" />
+
                 <div class="card">
-                    <div class="card-body my-5 py-5">
-                        <figure class="text-center my-5 py-5">
-                            <blockquote class="blockquote" id="learnWordQuiz">
-                                랜덤으로 출력되는 의미를 보고 단어를 맞춰주세요.
-                            </blockquote>
-                            <figcaption
-                                class="blockquote-footer"
-                                id="learnWordExplain">
-                                저장된 횟수가 많을수록 더 자주 출력됩니다.
-                            </figcaption>
-                            <button
-                                class="btn btn-outline-primary"
-                                type="button"
-                                id="learnWordQuizBtn">
-                                문제 풀기
-                            </button>
-                        </figure>
+                    <div class="card-body" style="height: 500px">
+                        <div class="fs-5 mb-3 badge rounded-pill bg-primary">
+                            <i class="bi bi-chat-quote-fill"></i> 하이염~
+                        </div>
+                        <br />
+                        <div class="fs-5 mb-3 badge rounded-pill bg-dark">
+                            <i class="bi bi-robot"></i> 프로젝트를 성공적으로
+                            마무리하려면 팀원들과의 협력이 중요하다.
+                        </div>
+                        <br />
+                        <div class="fs-5 mb-3 badge rounded-pill bg-success">
+                            <i class="bi bi-check-circle-fill"></i> 정답입니다.
+                        </div>
+                        <br />
+                        <div class="fs-5 mb-1 badge rounded-pill bg-danger">
+                            <i class="bi bi-exclamation-circle-fill"></i>
+                            오답입니다. 정답은 '팀원'입니다.
+                        </div>
+                        <br />
+                        <button
+                            class="btn btn-link btn-sm text-decoration-none text-primary ms-4">
+                            <i class="bi bi-arrow-return-right"></i> 계속하기
+                        </button>
+                        <button
+                            class="btn btn-link btn-sm text-decoration-none text-muted ms-1">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                            화면지우기
+                        </button>
                     </div>
                     <div class="card-footer">
                         <div class="input-group">
-                            <span
-                                class="input-group-text"
-                                id="learnWordInputBox"
-                                >의미에 해당하는 단어를 입력하세요</span
-                            >
+                            <span class="input-group-text">
+                                채팅을 입력하세요.
+                            </span>
                             <input
                                 type="text"
                                 class="form-control"
-                                id="learnWordInput"
-                                aria-label="Sizing example input"
-                                aria-describedby="learnWordInput" />
+                                id="learnMatchingInput" />
                             <button
-                                class="btn btn-outline-primary"
-                                type="button"
-                                id="learnWordBtn">
-                                입력
+                                class="btn btn-primary"
+                                id="learnMatchingBtn">
+                                전송
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section> -->
+            <section id="wordMatching">
+                <div class="h4">
+                    <span class="engFont">www.</span>학습하기:
+                    <strong>단어 맞추기</strong>
+                </div>
+                <hr class="border border-2 border-primary opacity-100" style="width: 360px" />
+            
+                <div class="card">
+                    <div class="card-body flex-grow-1 overflow-auto" style="height: 500px;">
+                        <!-- 채팅 내용 -->
+                    </div>
+                    <div class="card-footer">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                채팅을 입력하세요.
+                            </span>
+                            <input type="text" class="form-control" id="learnMatchingInput" />
+                            <button class="btn btn-primary" id="learnMatchingBtn">전송</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 학습하기: 의미 맞추기 섹션 -->
+            <section id="wordMeaning">
+                <div class="h4">
+                    <span class="engFont">www.</span>학습하기:
+                    <strong>의미 맞추기</strong>
+                </div>
+                <hr
+                    class="border border-2 border-primary opacity-100"
+                    style="width: 360px" />
+
+                <div class="card">
+                    <div class="card-body flex-grow-1 overflow-auto" style="height: 500px" id="wordMeaningChat">
+                        <!-- 채팅창 -->
+                    </div>
+                    <div class="card-footer">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                채팅을 입력하세요.
+                            </span>
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="wordMeaningInput" />
+                            <button class="btn btn-primary" id="wordMeaningBtn">
+                                전송
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 학습하기: 문장 만들기 -->
+            <section id="chatBot">
+                <div class="h4">
+                    <span class="engFont">www.</span>학습하기:
+                    <strong>문장 만들기</strong>
+                </div>
+                <hr
+                    class="border border-2 border-primary opacity-100"
+                    style="width: 360px" />
+
+                <div class="card">
+                    <div class="card-body chat-container">
+                        <div id="chatArea" class="chat-area">
+                            <!-- 채팅 메시지가 여기에 동적으로 추가됩니다 -->
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="input-group">
+                            <button
+                                class="btn btn-success"
+                                id="startLearningBtn">
+                                학습 시작
+                            </button>
+                            <button
+                                class="btn btn-danger"
+                                id="endLearningBtn"
+                                style="display: none">
+                                학습 종료
+                            </button>
+                            <input
+                                type="text"
+                                id="userInput"
+                                class="form-control"
+                                placeholder="답변을 입력하세요" />
+                            <button class="btn btn-primary" id="sendBtn">
+                                전송
                             </button>
                         </div>
                     </div>
@@ -168,8 +285,10 @@
 
             <!-- 도움말 섹션 -->
             <section id="help">
-                <h1><span class="engFont">Word Wise Web: </span> 도움말</h1>
-                <hr />
+                <div class="h4"><span class="engFont">www.</span>도움말</div>
+                <hr
+                    class="border border-2 border-primary opacity-100"
+                    style="width: 180px" />
                 <!-- 기본 사용법 -->
                 <div class="card mb-3">
                     <div class="card-header fw-bold">1. 기본 사용법</div>
@@ -344,16 +463,18 @@
                 </div>
             </section>
 
-            <!-- 일반 설정 섹션 -->
+            <!-- 환경설정 섹션 -->
             <section id="settings">
-                <h1><span class="engFont">Word Wise Web: </span> 설정</h1>
-                <hr />
+                <div class="h4"><span class="engFont">www.</span>환경설정</div>
+                <hr
+                    class="border border-2 border-primary opacity-100"
+                    style="width: 180px" />
 
                 <div class="card mb-3">
                     <div class="card-header fw-bold">
                         일반 설정
                         <small class="fw-light text-danger"
-                            >설정 기능은 아직 구현되지 않았습니다.</small
+                            >형광펜 표시 기능은 추후 구현 예정입니다.</small
                         >
                     </div>
                     <div class="card-body">
@@ -384,7 +505,8 @@
                             <input
                                 class="form-check-input"
                                 type="checkbox"
-                                id="highlightSwitch" />
+                                id="highlightSwitch"
+                                disabled />
                             <label
                                 class="form-check-label"
                                 for="highlightSwitch"
@@ -393,7 +515,7 @@
                         </div>
                     </div>
                     <div class="card-footer d-grid">
-                        <button id="saveSettingsBtn" class="btn btn-success">
+                        <button id="saveSettingsBtn" class="btn btn-primary">
                             설정 저장
                         </button>
                     </div>
@@ -407,7 +529,10 @@
                             <a
                                 href="http://goo.gle/aistudio-korea-YT"
                                 target="_blank"
-                                >http://goo.gle/aistudio-korea-YT</a
+                                class="text-decoration-none"
+                                ><span class="text-warning"
+                                    >http://goo.gle/aistudio-korea-YT</span
+                                ></a
                             ></small
                         >
                     </div>
@@ -436,11 +561,14 @@
 
             <!-- 정보 섹션 -->
             <section id="about">
-                <h1><span class="engFont">Word Wise Web: </span> 정보</h1>
-                <hr />
+                <div class="h4"><span class="engFont">www.</span>정보</div>
+                <hr
+                    class="border border-2 border-primary opacity-100"
+                    style="width: 180px" />
+
                 <div class="card">
                     <div class="card-body">
-                        <p>Word Wise Web Extension 버전: 0.0.1</p>
+                        <p>Word Wise Web Extension 버전: 0.2.0</p>
                         <p>개발자: Baristacus, Koho, Sydneyskim</p>
                         <p>
                             깃허브:

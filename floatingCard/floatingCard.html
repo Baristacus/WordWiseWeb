@@ -7,12 +7,16 @@
         <link rel="stylesheet" href="../libs/bootstrap.min.css" />
         <link
             rel="stylesheet"
-            href="../fonts/Bootstrap-icons/bootstrap-icons.min.css" />
+            href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
         <link rel="stylesheet" href="floatingCard.css" />
     </head>
     <body>
         <div class="container-fluid">
-            <header class="row py-2 mb-3 border-bottom text-primary">
+            <header
+                class="row py-2 mb-3 border-bottom text-primary"
+                oncontextmenu="return false"
+                ondragstart="return false"
+                onselectstart="return false">
                 <div class="col">
                     <img src="../images/icon-32.png" alt="Word Wise Web 로고" />
                     <span id="word" class="h5 align-middle fw-bold ms-2"></span>
@@ -40,6 +44,19 @@
                         <span class="fw-bold">예문</span>:
                         <span id="example" class="example"></span>
                     </p>
+                </div>
+
+                <hr />
+                <div
+                    id="userMemo"
+                    oncontextmenu="return false"
+                    ondragstart="return false"
+                    onselectstart="return false">
+                    <textarea
+                        id="userMemoText"
+                        class="form-control"
+                        rows="2"
+                        placeholder="(선택) 메모를 입력하세요"></textarea>
                 </div>
             </main>
 

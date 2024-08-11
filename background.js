@@ -52,12 +52,42 @@ async function initialize() {
 }
 
 // Gemini API 호출 함수
-async function callGeminiAPI(word, context) {
+async function callGeminiAPI(prompt, context = '') {
     if (!API_KEY) {
         await loadApiKey();
         if (!API_KEY) throw new Error('등록된 API_KEY가 없습니다. 옵션 페이지에서 API 키를 설정해주세요.');
     }
 
+    try {
+        const response = await fetch(`${API_URL}?key=${API_KEY}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.2,
+                    topK: 40,
+                    topP: 0.95,
+                    maxOutputTokens: 1024,
+                },
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`API 호출 실패: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.candidates[0].content.parts[0].text;
+    } catch (error) {
+        console.error('Gemini API 호출 오류:', error);
+        throw error;
+    }
+}
+
+async function getDefinition(word, context) {
     const prompt = `
         너는 백과사전이야. 아래의 텍스트와 텍스트가 포함된 문맥을 보고 텍스트의 사전적 의미와 예문을 알려줘.
 
@@ -86,33 +116,7 @@ async function callGeminiAPI(word, context) {
     `;
 
     try {
-        const response = await fetch(`${API_URL}?key=${API_KEY}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    temperature: 0.2,
-                    topK: 40,
-                    topP: 0.95,
-                    maxOutputTokens: 1024,
-                },
-            }),
-        });
-
-        if (!response.ok) {
-            if (response.status === 400) {
-                const errorData = await response.json();
-                if (errorData.error && errorData.error.message.includes('API key not valid')) {
-                    throw new Error('API 키가 유효하지 않습니다. API 키를 확인해주세요.');
-                }
-            }
-            throw new Error(`API 호출 실패: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        const result = data.candidates[0].content.parts[0].text;
-
+        const result = await callGeminiAPI(prompt);
         const lines = result.split('\n');
         let definition = '';
         let example = '';
@@ -122,7 +126,9 @@ async function callGeminiAPI(word, context) {
             else if (line.startsWith('예문:')) example = line.slice(3).trim();
         }
 
-        if (!definition || !example) return callGeminiAPI(word, context);
+        if (!definition || !example) {
+            throw new Error('정의 또는 예문을 추출할 수 없습니다.');
+        }
 
         return { definition, example };
     } catch (error) {
@@ -132,7 +138,27 @@ async function callGeminiAPI(word, context) {
 }
 
 // 단어 관련 함수
-async function saveWord(word, definition, example) {
+async function getWord(word) {
+    if (!db) await initDB();
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.get(word);
+
+        request.onerror = () => reject(new Error('단어 조회 중 오류가 발생했습니다.'));
+        request.onsuccess = (event) => {
+            const wordData = event.target.result;
+            if (wordData) {
+                resolve(wordData);
+            } else {
+                reject(new Error('단어를 찾을 수 없습니다.'));
+            }
+        };
+    });
+}
+
+async function saveWord(word, definition, example, userMemo) {
     if (!db) await initDB();
 
     return new Promise((resolve, reject) => {
@@ -150,11 +176,37 @@ async function saveWord(word, definition, example) {
             newWord.count++;
             newWord.definition = definition;
             newWord.example = example;
+            newWord.usermemo = userMemo;
             newWord.addedDate = new Date().toISOString();
 
             const putRequest = store.put(newWord);
             putRequest.onerror = () => reject(new Error('단어 저장 중 오류가 발생했습니다.'));
             putRequest.onsuccess = () => resolve(newWord);
+        };
+
+        getRequest.onerror = () => reject(new Error('단어 조회 중 오류가 발생했습니다.'));
+    });
+}
+
+// 단어 메모 업데이트
+async function updateWordMemo(word, memo) {
+    if (!db) await initDB();
+
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
+        const getRequest = store.get(word);
+
+        getRequest.onsuccess = function (event) {
+            const wordData = event.target.result;
+            if (wordData) {
+                wordData.usermemo = memo;
+                const putRequest = store.put(wordData);
+                putRequest.onerror = () => reject(new Error('메모 업데이트 중 오류가 발생했습니다.'));
+                putRequest.onsuccess = () => resolve(wordData);
+            } else {
+                reject(new Error('단어를 찾을 수 없습니다.'));
+            }
         };
 
         getRequest.onerror = () => reject(new Error('단어 조회 중 오류가 발생했습니다.'));
@@ -174,7 +226,7 @@ async function deleteWord(wordToDelete) {
     });
 }
 
-async function getRecentWords(limit = 100) {
+async function getRecentWords(limit = 1000) {
     if (!db) await initDB();
 
     return new Promise((resolve, reject) => {
@@ -195,6 +247,21 @@ async function getRecentWords(limit = 100) {
             }
         };
     });
+}
+
+async function getRelatedWords(word, count = 5) {
+    const allWords = await getRecentWords();
+
+    // 간단한 연관성 점수 계산 (실제로는 더 복잡한 알고리즘을 사용할 수 있습니다)
+    const relatedWords = allWords.map(w => ({
+        ...w,
+        score: (w.definition.includes(word.term) || word.definition.includes(w.term)) ? 2 :
+            (w.example.includes(word.term) || word.example.includes(w.term)) ? 1 : 0
+    })).sort((a, b) => b.score - a.score)
+        .filter(w => w.term !== word.term)
+        .slice(0, count);
+
+    return relatedWords;
 }
 
 async function getWordCount() {
@@ -238,13 +305,16 @@ async function getDatabaseSize() {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const actions = {
         getRecentWords: () => getRecentWords().then(words => ({ success: true, words })),
-        getDefinition: () => callGeminiAPI(request.word, request.context).then(result => ({
+        getDefinition: () => getDefinition(request.word, request.context).then(result => ({
             success: true,
             word: request.word,
             definition: result.definition,
             example: result.example
         })),
-        saveWord: () => saveWord(request.word, request.definition, request.example).then(result => ({ success: true, result })),
+        getWord: () => getWord(request.word).then(word => ({ success: true, word })),
+        getRelatedWords: () => getRelatedWords(request.word).then(words => ({ success: true, words })),
+        saveWord: () => saveWord(request.word, request.definition, request.example, request.userMemo).then(result => ({ success: true, result })),
+        updateWordMemo: () => updateWordMemo(request.word, request.memo).then(result => ({ success: true, result })),
         deleteWord: () => deleteWord(request.word).then(() => ({ success: true })),
         getWordCount: () => getWordCount().then(count => ({ success: true, count })),
         getPremiumDays: () => getPremiumDays().then(days => ({ success: true, days })),
@@ -256,13 +326,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         checkApiKey: () => checkApiKey().then(isValid => ({
             success: isValid,
             error: isValid ? null : 'API 키를 먼저 등록해 주세요.'
+        })),
+        callGeminiAPI: () => callGeminiAPI(request.prompt).then(response => ({
+            success: true,
+            response: response
         }))
     };
 
     const action = actions[request.action];
     if (action) {
         action().then(sendResponse).catch(error => sendResponse({ success: false, error: error.message }));
-        return true;
+        return true;  // 비동기 응답을 위해 true 반환
     }
 
     sendResponse({ success: false, error: '알 수 없는 액션' });
