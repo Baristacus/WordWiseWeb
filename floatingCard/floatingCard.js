@@ -60,7 +60,7 @@ async function handleSaveWord() {
 
         if (saveResponse && saveResponse.success) {
             DOM.userMemoText.value = "";
-            window.parent.postMessage({ action: 'saveOk', word: word }, '*');            
+            window.parent.postMessage({ action: 'saveOk', word: word }, '*');
         } else {
             console.error('단어 저장 실패:', saveResponse ? saveResponse.error : '응답 없음');
             showNotification('단어 저장에 실패했습니다.');
@@ -106,7 +106,7 @@ function sendMessageToBackground(message) {
 // 이벤트 리스너
 DOM.wordListBtn.addEventListener('click', () => openOptionsPage('wordList'));
 DOM.settingsBtn.addEventListener('click', () => openOptionsPage('settings'));
-DOM.learnBtn.addEventListener('click', () => openOptionsPage('learn'));
+DOM.learnBtn.addEventListener('click', () => openOptionsPage('wordMatching'));
 DOM.saveWordBtn.addEventListener('click', async () => handleSaveWord());
 
 // 내용 변경 감지 및 높이 조절

@@ -69,7 +69,7 @@ const wordFunctions = {
         } else {
             example = '';
         }
-    
+
         if (word.usermemo) {
             memo = `<hr class="my-2"><p><strong>메모:</strong> ${word.usermemo}</p>`;
         } else {
@@ -88,9 +88,9 @@ const wordFunctions = {
             <div id="collapse${index}" class="accordion-collapse collapse" aria-labelledby="heading${index}" data-bs-parent="#recentWordsAccordion">
                 <div class="accordion-body">
                     <p><strong>의미:</strong> ${word.definition}</p>`
-                    + example
-                    + memo +
-                    `<button class="btn btn-sm btn-danger delete-word-btn" data-word="${word.term}"><i class="bi bi-journal-x"></i> 삭제</button>
+            + example
+            + memo +
+            `<button class="btn btn-sm btn-danger delete-word-btn" data-word="${word.term}"><i class="bi bi-journal-x"></i> 삭제</button>
                 </div>
             </div>
         `;
@@ -231,7 +231,7 @@ function openOptionsPage(section) {
 DOM.userProfileBtn.addEventListener('click', () => openOptionsPage('profile'));
 DOM.settingsBtn.addEventListener('click', () => openOptionsPage('settings'));
 DOM.wordListBtn.addEventListener('click', () => openOptionsPage('wordList'));
-DOM.learnBtn.addEventListener('click', () => openOptionsPage('learn'));
+DOM.learnBtn.addEventListener('click', () => openOptionsPage('wordMatching'));
 
 DOM.addWordBtn.addEventListener('click', () => {
     const word = DOM.wordInput.value.trim();
