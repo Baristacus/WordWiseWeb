@@ -367,7 +367,7 @@ const wordManagement = {
 
 
 // 학습하기 관련 함수
-// 학습하기: 단어 맞추기 (승은)
+// 학습하기: 단어 맞추기
 const wordMatching = {
     currentWord: null,
     usedWords: [],
@@ -499,12 +499,12 @@ const wordMeaning = {
     wordMeaningChat: document.getElementById('wordMeaningChat'),
     wordMeaningInput: document.getElementById('wordMeaningInput'),
     wordMeaningBtn: document.getElementById('wordMeaningBtn'),
-    
+
     setInputDisabled(isDisabled) {
         this.wordMeaningInput.disabled = isDisabled;
         this.wordMeaningBtn.disabled = isDisabled;
     },
-    
+
     initialize() {
         this.wordMeaningBtn.addEventListener('click', () => this.handleUserInput());
         this.wordMeaningInput.addEventListener('keypress', (e) => {
@@ -534,7 +534,7 @@ const wordMeaning = {
         }
     },
 
-    addMessage(message, type, result=null) {
+    addMessage(message, type, result = null) {
         const messageDiv = document.createElement('div');
 
         let bgType, alignment, iconType;
@@ -550,7 +550,7 @@ const wordMeaning = {
             } else if (result === 'warning') {
                 bgType = `bg-${result}`;
                 iconType = 'bi-exclamation-triangle-fill';
-            }  else if (result === 'danger') {
+            } else if (result === 'danger') {
                 bgType = `bg-${result}`;
                 iconType = 'bi-exclamation-circle-fill';
             } else {
@@ -575,11 +575,11 @@ const wordMeaning = {
 
             const buttonDiv = document.createElement('div');
             buttonDiv.className = 'mt-1 continue-button-container';
-            
+
             const continueButton = document.createElement('button');
             continueButton.className = 'btn btn-link btn-sm text-decoration-none text-primary ms-4';
             continueButton.innerHTML = '<i class="bi bi-arrow-return-right"></i> 계속하기';
-            
+
             const clearButton = document.createElement('button');
             clearButton.className = 'btn btn-link btn-sm text-decoration-none text-muted ms-1';
             clearButton.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i> 화면지우기';
@@ -593,13 +593,13 @@ const wordMeaning = {
                 this.setQuiz();
             });
 
-            clearButton.addEventListener('click', () =>  {
+            clearButton.addEventListener('click', () => {
                 this.wordMeaningChat.innerHTML = '';
                 this.setQuiz();
             });
         }
 
-        
+
 
         // 스크롤을 아래로 이동
         this.wordMeaningChat.scrollTop = this.wordMeaningChat.scrollHeight;
@@ -653,10 +653,10 @@ const wordMeaning = {
                 만약 '사용자 입력'에 '텍스트'가 들어가있다면 답변을 '-1'로 해줘.
                 
                 반드시 단순히 숫자로만 답변야해. 예: 78
-                `; 
+                `;
 
             const response = await this.callGeminiAPI(prompt);
-            
+
             let chatAnswer, chatResult
             if (response === '-1') {
                 chatAnswer = '단어를 그대로 작성하면 안 됩니다.';
