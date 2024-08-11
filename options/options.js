@@ -377,7 +377,7 @@ const wordMeaning = {
 
 }
 
-// 학습하기: 의미 연결하기 (석인)
+// 학습하기: 문장 만들기
 const chatBot = {
     isLearning: false,
     currentWord: null,
@@ -386,6 +386,8 @@ const chatBot = {
     sendBtn: document.getElementById('sendBtn'),
     startLearningBtn: document.getElementById('startLearningBtn'),
     endLearningBtn: document.getElementById('endLearningBtn'),
+    relatedWords: [],
+    currentProblemIndex: 0,
 
     initialize() {
         this.sendBtn.addEventListener('click', () => this.sendMessage());
@@ -394,6 +396,19 @@ const chatBot = {
         });
         this.startLearningBtn.addEventListener('click', () => this.startLearning());
         this.endLearningBtn.addEventListener('click', () => this.endLearning());
+
+        // 초기 상태 설정
+        this.setInputState(false);
+    },
+
+    setInputState(enabled) {
+        this.userInput.disabled = !enabled;
+        this.sendBtn.disabled = !enabled;
+        if (enabled) {
+            this.userInput.placeholder = "답변을 입력하세요";
+        } else {
+            this.userInput.placeholder = "학습을 시작하려면 '학습 시작' 버튼을 클릭하세요";
+        }
     },
 
     async startLearning() {
@@ -401,15 +416,80 @@ const chatBot = {
         this.startLearningBtn.style.display = 'none';
         this.endLearningBtn.style.display = 'inline-block';
         this.chatArea.innerHTML = '';
+        this.setInputState(true);  // 입력창 활성화
         await this.selectRandomWord();
-        await this.sendGeminiMessage(`안녕하세요! 오늘은 '${this.currentWord.term}' 단어에 대해 학습해보겠습니다. 이 단어의 뜻을 아시나요?`);
+        await this.getRelatedWords();
+        this.currentProblemIndex = 0;
+        this.presentNextProblem();
+    },
+
+    async getRelatedWords() {
+        const response = await utils.sendMessageToBackground({
+            action: 'getRelatedWords',
+            word: this.currentWord,
+            count: 3
+        });
+        if (response.success) {
+            this.relatedWords = response.words;
+        } else {
+            console.error('연관 단어를 가져오는데 실패했습니다:', response.error);
+            this.relatedWords = [];
+        }
+    },
+
+    presentNextProblem() {
+        if (this.currentProblemIndex >= this.relatedWords.length) {
+            this.addMessageToChat('gemini', "모든 문제를 완료했습니다! 학습을 종료하시겠습니까?");
+            return;
+        }
+
+        const relatedWord = this.relatedWords[this.currentProblemIndex];
+        const prompt = `
+        다음 단어들을 사용하여 문장을 만들어보세요:`
+            + `<br><br>` +
+            `1. ${this.currentWord.term}`
+            + `<br>` +
+            `<small>${this.currentWord.definition}</small>`
+            + `<br><br>` +
+            `2. ${relatedWord.term}`
+            + `<br>` +
+            `<small>${relatedWord.definition}</small>`
+            ;
+
+        this.addMessageToChat('gemini', prompt);
+    },
+
+    async processUserMessage(message) {
+        const prompt = `
+        학습자가 만든 문장: "${message}"
+        
+        사용해야 할 단어들:
+        1. ${this.currentWord.term}: ${this.currentWord.definition}
+        2. ${this.relatedWords[this.currentProblemIndex].term}: ${this.relatedWords[this.currentProblemIndex].definition}
+        
+        이 문장이 두 단어를 올바르게 사용했는지 평가해주세요. 문장이 적절하다면 칭찬과 함께 다음 문제로 넘어가 주세요. 완전한 문장이 아닐경우 왜 그런지 간단하게만 섦명하고, 다시 만들어 보도록 해주세요. 문장이 부적절하다면 왜 그런지 설명하고, 다시 만들어 보도록 해주세요. 예문 또는 예시는 어떠한 경우에도 절대로 보여주지 마세요. 전혀 관련 없는 단어를 입력했다면 평가를 하지 말고, 다시 만들어 보도록 해주세요. 절대로 HTML태그나 Markdown을 사용하지 마세요.
+        `;
+
+        const response = await this.callGeminiAPI(prompt);
+        this.addMessageToChat('gemini', response);
+
+        if (response.includes("다음 문제로 넘어가") || response.includes("모든 문제를 완료")) {
+            this.currentProblemIndex++;
+            if (this.currentProblemIndex < this.relatedWords.length) {
+                setTimeout(() => this.presentNextProblem(), 2000);
+            } else {
+                this.addMessageToChat('gemini', "모든 문제를 완료했습니다! 학습을 종료하시겠습니까?");
+                this.setInputState(false);  // 모든 문제 완료 시 입력창 비활성화
+            }
+        }
     },
 
     endLearning() {
         this.isLearning = false;
         this.startLearningBtn.style.display = 'inline-block';
         this.endLearningBtn.style.display = 'none';
-        this.sendGeminiMessage("학습을 종료합니다. 수고하셨습니다!");
+        this.setInputState(false);  // 입력창 비활성화
+        this.addMessageToChat('gemini', "학습을 종료합니다. 수고하셨습니다!");
     },
 
     async selectRandomWord() {
@@ -430,16 +510,20 @@ const chatBot = {
         }
     },
 
-    async processUserMessage(message) {
-        // 여기서 Gemini API를 호출하여 사용자 메시지를 처리하고 응답을 생성합니다.
-        const geminiResponse = await this.callGeminiAPI(message);
-        await this.sendGeminiMessage(geminiResponse);
-    },
-
-    async callGeminiAPI(message) {
-        // 실제 Gemini API 호출 로직을 구현해야 합니다.
-        // 여기서는 간단한 예시 응답을 반환합니다.
-        return `당신의 답변 "${message}"에 대해, '${this.currentWord.term}'의 실제 의미는 "${this.currentWord.definition}"입니다. 더 자세히 설명해 드릴까요?`;
+    async callGeminiAPI(prompt) {
+        try {
+            const response = await utils.sendMessageToBackground({
+                action: 'callGeminiAPI',
+                prompt: prompt
+            });
+            if (!response.success) {
+                throw new Error(response.error || 'API 호출 실패');
+            }
+            return response.response;
+        } catch (error) {
+            console.error('Gemini API 호출 중 오류 발생:', error);
+            return '죄송합니다. 응답을 생성하는 데 문제가 발생했습니다.';
+        }
     },
 
     addMessageToChat(sender, message) {
@@ -460,11 +544,14 @@ const chatBot = {
         messageElement.classList.add(alignment);
 
         messageElement.innerHTML = `
-            <div class="fs-5 badge rounded-pill ${bgClass}" style="max-width: 80%;">
-                <i class="bi ${icon}"></i> ${message}
+            <div class="fs-5 rounded rounded-4 text-white py-1 px-3 ${bgClass}" style="max-width: 80%">
+                <i class="me-2 bi ${icon}"></i> ${message}
             </div>
         `;
         this.chatArea.insertBefore(messageElement, this.chatArea.firstChild);
+
+        // 스크롤을 맨 아래로 이동 (역순 flex 때문에 맨 위가 됨)
+        this.chatArea.scrollTop = 0;
     },
 
     async sendGeminiMessage(message) {

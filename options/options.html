@@ -53,7 +53,9 @@
                             >
                         </li>
                         <li class="nav-item ms-2">
-                            <a class="nav-link" href="#chatBot">학습: 챗 봇</a>
+                            <a class="nav-link" href="#chatBot"
+                                >학습: 문장 만들기</a
+                            >
                         </li>
                     </ul>
 
@@ -248,27 +250,19 @@
                 </div>
             </section>
 
-            <!-- 학습하기: 챗 봇 -->
+            <!-- 학습하기: 문장 만들기 -->
             <section id="chatBot">
                 <div class="h4">
                     <span class="engFont">www.</span>학습하기:
-                    <strong>챗 봇</strong>
+                    <strong>문장 만들기</strong>
                 </div>
                 <hr
                     class="border border-2 border-primary opacity-100"
                     style="width: 360px" />
 
                 <div class="card">
-                    <div
-                        class="card-body"
-                        style="
-                            height: 500px;
-                            display: flex;
-                            flex-direction: column;
-                        ">
-                        <div
-                            id="chatArea"
-                            class="flex-grow-1 d-flex flex-column-reverse overflow-auto mb-3">
+                    <div class="card-body chat-container">
+                        <div id="chatArea" class="chat-area">
                             <!-- 채팅 메시지가 여기에 동적으로 추가됩니다 -->
                         </div>
                     </div>

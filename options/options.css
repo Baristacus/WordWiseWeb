@@ -14,11 +14,36 @@
     font-style: normal;
 }
 
-#chatArea {
-    scroll-behavior: smooth;
+.chat-container {
+    height: 500px;
+    position: relative;
+    overflow: hidden;
 }
 
-#chatArea .badge {
-    word-break: break-word;
-    text-align: left;
+.chat-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow-y: scroll;
+    padding-right: 20px; /* 스크롤바 너비만큼 패딩 추가 */
+    padding-left: 20px;
+    padding-top: 20px;
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+.chat-area::-webkit-scrollbar {
+    width: 0px; /* WebKit 기반 브라우저의 스크롤바 숨김 */
+}
+
+#chatArea .rounded-pill {
+    border-radius: 20px !important;
+    padding: 10px 15px;
+}
+
+/* Firefox용 스크롤바 숨김 */
+.chat-area {
+    scrollbar-width: none;
 }

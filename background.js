@@ -249,6 +249,21 @@ async function getRecentWords(limit = 1000) {
     });
 }
 
+async function getRelatedWords(word, count = 5) {
+    const allWords = await getRecentWords();
+
+    // 간단한 연관성 점수 계산 (실제로는 더 복잡한 알고리즘을 사용할 수 있습니다)
+    const relatedWords = allWords.map(w => ({
+        ...w,
+        score: (w.definition.includes(word.term) || word.definition.includes(w.term)) ? 2 :
+            (w.example.includes(word.term) || word.example.includes(w.term)) ? 1 : 0
+    })).sort((a, b) => b.score - a.score)
+        .filter(w => w.term !== word.term)
+        .slice(0, count);
+
+    return relatedWords;
+}
+
 async function getWordCount() {
     if (!db) await initDB();
 
@@ -287,8 +302,6 @@ async function getDatabaseSize() {
 }
 
 // 메시지 리스너
-// background.js
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const actions = {
         getRecentWords: () => getRecentWords().then(words => ({ success: true, words })),
@@ -299,6 +312,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             example: result.example
         })),
         getWord: () => getWord(request.word).then(word => ({ success: true, word })),
+        getRelatedWords: () => getRelatedWords(request.word).then(words => ({ success: true, words })),
         saveWord: () => saveWord(request.word, request.definition, request.example, request.userMemo).then(result => ({ success: true, result })),
         updateWordMemo: () => updateWordMemo(request.word, request.memo).then(result => ({ success: true, result })),
         deleteWord: () => deleteWord(request.word).then(() => ({ success: true })),
