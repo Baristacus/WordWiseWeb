@@ -53,9 +53,7 @@
                             >
                         </li>
                         <li class="nav-item ms-2">
-                            <a class="nav-link" href="#meaningConnection"
-                                >학습: 의미 연결</a
-                            >
+                            <a class="nav-link" href="#chatBot">학습: 챗 봇</a>
                         </li>
                     </ul>
 
@@ -250,17 +248,54 @@
                 </div>
             </section>
 
-            <!-- 학습하기: 의미 연결하기 섹션 -->
-            <section id="meaningConnection">
+            <!-- 학습하기: 챗 봇 -->
+            <section id="chatBot">
                 <div class="h4">
                     <span class="engFont">www.</span>학습하기:
-                    <strong>의미 연결하기</strong>
+                    <strong>챗 봇</strong>
                 </div>
                 <hr
                     class="border border-2 border-primary opacity-100"
                     style="width: 360px" />
 
-                <div>의미 연결하기 내용</div>
+                <div class="card">
+                    <div
+                        class="card-body"
+                        style="
+                            height: 500px;
+                            display: flex;
+                            flex-direction: column;
+                        ">
+                        <div
+                            id="chatArea"
+                            class="flex-grow-1 d-flex flex-column-reverse overflow-auto mb-3">
+                            <!-- 채팅 메시지가 여기에 동적으로 추가됩니다 -->
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="input-group">
+                            <button
+                                class="btn btn-success"
+                                id="startLearningBtn">
+                                학습 시작
+                            </button>
+                            <button
+                                class="btn btn-danger"
+                                id="endLearningBtn"
+                                style="display: none">
+                                학습 종료
+                            </button>
+                            <input
+                                type="text"
+                                id="userInput"
+                                class="form-control"
+                                placeholder="답변을 입력하세요" />
+                            <button class="btn btn-primary" id="sendBtn">
+                                전송
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- 도움말 섹션 -->

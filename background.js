@@ -52,12 +52,42 @@ async function initialize() {
 }
 
 // Gemini API 호출 함수
-async function callGeminiAPI(word, context) {
+async function callGeminiAPI(prompt, context = '') {
     if (!API_KEY) {
         await loadApiKey();
         if (!API_KEY) throw new Error('등록된 API_KEY가 없습니다. 옵션 페이지에서 API 키를 설정해주세요.');
     }
 
+    try {
+        const response = await fetch(`${API_URL}?key=${API_KEY}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    temperature: 0.2,
+                    topK: 40,
+                    topP: 0.95,
+                    maxOutputTokens: 1024,
+                },
+            }),
+        });
+
+        if (!response.ok) {
+            throw new Error(`API 호출 실패: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.candidates[0].content.parts[0].text;
+    } catch (error) {
+        console.error('Gemini API 호출 오류:', error);
+        throw error;
+    }
+}
+
+async function getDefinition(word, context) {
     const prompt = `
         너는 백과사전이야. 아래의 텍스트와 텍스트가 포함된 문맥을 보고 텍스트의 사전적 의미와 예문을 알려줘.
 
@@ -86,33 +116,7 @@ async function callGeminiAPI(word, context) {
     `;
 
     try {
-        const response = await fetch(`${API_URL}?key=${API_KEY}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    temperature: 0.2,
-                    topK: 40,
-                    topP: 0.95,
-                    maxOutputTokens: 1024,
-                },
-            }),
-        });
-
-        if (!response.ok) {
-            if (response.status === 400) {
-                const errorData = await response.json();
-                if (errorData.error && errorData.error.message.includes('API key not valid')) {
-                    throw new Error('API 키가 유효하지 않습니다. API 키를 확인해주세요.');
-                }
-            }
-            throw new Error(`API 호출 실패: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        const result = data.candidates[0].content.parts[0].text;
-
+        const result = await callGeminiAPI(prompt);
         const lines = result.split('\n');
         let definition = '';
         let example = '';
@@ -122,7 +126,9 @@ async function callGeminiAPI(word, context) {
             else if (line.startsWith('예문:')) example = line.slice(3).trim();
         }
 
-        if (!definition || !example) return callGeminiAPI(word, context);
+        if (!definition || !example) {
+            throw new Error('정의 또는 예문을 추출할 수 없습니다.');
+        }
 
         return { definition, example };
     } catch (error) {
@@ -281,10 +287,12 @@ async function getDatabaseSize() {
 }
 
 // 메시지 리스너
+// background.js
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const actions = {
         getRecentWords: () => getRecentWords().then(words => ({ success: true, words })),
-        getDefinition: () => callGeminiAPI(request.word, request.context).then(result => ({
+        getDefinition: () => getDefinition(request.word, request.context).then(result => ({
             success: true,
             word: request.word,
             definition: result.definition,
@@ -304,13 +312,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         checkApiKey: () => checkApiKey().then(isValid => ({
             success: isValid,
             error: isValid ? null : 'API 키를 먼저 등록해 주세요.'
+        })),
+        callGeminiAPI: () => callGeminiAPI(request.prompt).then(response => ({
+            success: true,
+            response: response
         }))
     };
 
     const action = actions[request.action];
     if (action) {
         action().then(sendResponse).catch(error => sendResponse({ success: false, error: error.message }));
-        return true;
+        return true;  // 비동기 응답을 위해 true 반환
     }
 
     sendResponse({ success: false, error: '알 수 없는 액션' });

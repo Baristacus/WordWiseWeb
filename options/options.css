@@ -13,3 +13,12 @@
     font-weight: 600;
     font-style: normal;
 }
+
+#chatArea {
+    scroll-behavior: smooth;
+}
+
+#chatArea .badge {
+    word-break: break-word;
+    text-align: left;
+}

@@ -378,8 +378,98 @@ const wordMeaning = {
 }
 
 // 학습하기: 의미 연결하기 (석인)
-const meaningConnection = {
+const chatBot = {
+    isLearning: false,
+    currentWord: null,
+    chatArea: document.getElementById('chatArea'),
+    userInput: document.getElementById('userInput'),
+    sendBtn: document.getElementById('sendBtn'),
+    startLearningBtn: document.getElementById('startLearningBtn'),
+    endLearningBtn: document.getElementById('endLearningBtn'),
 
+    initialize() {
+        this.sendBtn.addEventListener('click', () => this.sendMessage());
+        this.userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.sendMessage();
+        });
+        this.startLearningBtn.addEventListener('click', () => this.startLearning());
+        this.endLearningBtn.addEventListener('click', () => this.endLearning());
+    },
+
+    async startLearning() {
+        this.isLearning = true;
+        this.startLearningBtn.style.display = 'none';
+        this.endLearningBtn.style.display = 'inline-block';
+        this.chatArea.innerHTML = '';
+        await this.selectRandomWord();
+        await this.sendGeminiMessage(`안녕하세요! 오늘은 '${this.currentWord.term}' 단어에 대해 학습해보겠습니다. 이 단어의 뜻을 아시나요?`);
+    },
+
+    endLearning() {
+        this.isLearning = false;
+        this.startLearningBtn.style.display = 'inline-block';
+        this.endLearningBtn.style.display = 'none';
+        this.sendGeminiMessage("학습을 종료합니다. 수고하셨습니다!");
+    },
+
+    async selectRandomWord() {
+        const response = await utils.sendMessageToBackground({ action: 'getRecentWords' });
+        if (response.success && response.words.length > 0) {
+            this.currentWord = response.words[Math.floor(Math.random() * response.words.length)];
+        } else {
+            throw new Error("단어를 불러오는데 실패했습니다.");
+        }
+    },
+
+    async sendMessage() {
+        const userMessage = this.userInput.value.trim();
+        if (userMessage) {
+            this.addMessageToChat('user', userMessage);
+            this.userInput.value = '';
+            await this.processUserMessage(userMessage);
+        }
+    },
+
+    async processUserMessage(message) {
+        // 여기서 Gemini API를 호출하여 사용자 메시지를 처리하고 응답을 생성합니다.
+        const geminiResponse = await this.callGeminiAPI(message);
+        await this.sendGeminiMessage(geminiResponse);
+    },
+
+    async callGeminiAPI(message) {
+        // 실제 Gemini API 호출 로직을 구현해야 합니다.
+        // 여기서는 간단한 예시 응답을 반환합니다.
+        return `당신의 답변 "${message}"에 대해, '${this.currentWord.term}'의 실제 의미는 "${this.currentWord.definition}"입니다. 더 자세히 설명해 드릴까요?`;
+    },
+
+    addMessageToChat(sender, message) {
+        const messageElement = document.createElement('div');
+        messageElement.className = 'mb-3 d-flex';
+
+        let bgClass, icon, alignment;
+        if (sender === 'user') {
+            bgClass = 'bg-primary';
+            icon = 'bi bi-chat-quote-fill';
+            alignment = 'justify-content-end';
+        } else {
+            bgClass = 'bg-dark';
+            icon = 'bi-robot';
+            alignment = 'justify-content-start';
+        }
+
+        messageElement.classList.add(alignment);
+
+        messageElement.innerHTML = `
+            <div class="fs-5 badge rounded-pill ${bgClass}" style="max-width: 80%;">
+                <i class="bi ${icon}"></i> ${message}
+            </div>
+        `;
+        this.chatArea.insertBefore(messageElement, this.chatArea.firstChild);
+    },
+
+    async sendGeminiMessage(message) {
+        this.addMessageToChat('gemini', message);
+    }
 }
 
 
@@ -578,6 +668,7 @@ async function initialize() {
     pageManagement.initializePage();
     setupEventListeners();
     pageManagement.setupNavigationListeners();
+    chatBot.initialize();
 }
 
 // 페이지 로드 시 초기화
