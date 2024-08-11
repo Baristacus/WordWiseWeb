@@ -369,8 +369,127 @@ const wordManagement = {
 // 학습하기 관련 함수
 // 학습하기: 단어 맞추기 (승은)
 const wordMatching = {
+    currentWord: null,
+    usedWords: [],
+    words: [],
+    chatArea: document.querySelector('#wordMatching .card-body'),
+    userInput: document.getElementById('learnMatchingInput'),
+    sendBtn: document.getElementById('learnMatchingBtn'),
 
-}
+    async initialize() {
+        this.clearChatArea();
+        this.sendBtn.addEventListener('click', this.sendMessage.bind(this));
+        this.userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.sendMessage();
+        });
+
+        await this.loadWords();
+
+        if (this.words.length > 0) {
+            this.startLearningSession();
+        } else {
+            this.showBotMessage("단어가 로드되지 않았습니다. 단어장을 확인해 주세요.");
+        }
+    },
+
+    async loadWords() {
+        try {
+            const response = await chrome.runtime.sendMessage({ action: 'getRecentWords' });
+            if (response.success) this.words = response.words;
+            else console.error('단어 로드 실패:', response.error || '단어 없음');
+        } catch (error) {
+            console.error('단어 로드 중 오류 발생:', error);
+        }
+    },
+
+    startLearningSession() {
+        this.showBotMessage("지금부터 학습하기를 시작하겠습니다.");
+        this.loadNewWord();
+    },
+
+    loadNewWord() {
+        const availableWords = this.words.filter(word => !this.usedWords.includes(word.term));
+
+        if (availableWords.length === 0) {
+            this.showBotMessage("모든 단어를 다 학습했습니다!");
+            return;
+        }
+
+        this.currentWord = availableWords[Math.floor(Math.random() * availableWords.length)];
+        this.usedWords.push(this.currentWord.term);
+
+        this.showBotMessage(`이 의미를 가진 단어는 무엇일까요?\n${this.currentWord.definition}`);
+    },
+
+    sendMessage() {
+        const userMessage = this.userInput.value.trim();
+        if (!userMessage) return;
+
+        this.showUserMessage(userMessage);
+        this.userInput.value = '';
+
+        const isCorrect = userMessage.toLowerCase() === this.currentWord.term.toLowerCase();
+        this.showBotMessage(isCorrect ? '정답입니다!' : `오답입니다. 정답은 '${this.currentWord.term}'입니다.`, isCorrect);
+
+        this.showContinueButtons();
+    },
+
+    showUserMessage(message) {
+        this.appendMessage(message, 'd-flex justify-content-end mb-3', 'bg-primary');
+    },
+
+    showBotMessage(message, isCorrect = null) {
+        let bgClass = 'bg-dark', icon = 'bi-robot';
+        if (isCorrect !== null) {
+            bgClass = isCorrect ? 'bg-success' : 'bg-danger';
+            icon = isCorrect ? 'bi bi-check-circle-fill' : 'bi bi-exclamation-circle-fill';
+        }
+        this.appendMessage(`<i class="${icon}"></i> ${message}`, 'd-flex justify-content-start mb-3', bgClass);
+    },
+
+    appendMessage(content, classNames, bgClass) {
+        const messageElement = document.createElement('div');
+        messageElement.className = `${classNames}`;
+        messageElement.innerHTML = `<div class="fs-5 badge rounded-pill ${bgClass}">${content}</div>`;
+        this.chatArea.appendChild(messageElement);
+        this.scrollToBottom();
+    },
+
+    showContinueButtons() {
+        const buttonElement = document.createElement('div');
+        buttonElement.className = 'mt-3 continue-button-container';
+        buttonElement.innerHTML = `
+            <button class="btn btn-link btn-sm text-decoration-none text-primary ms-4 continue-btn">
+                <i class="bi bi-arrow-return-right"></i> 계속하기
+            </button>
+            <button class="btn btn-link btn-sm text-decoration-none text-muted ms-1 clear-btn">
+                <i class="bi bi-arrow-counterclockwise"></i> 화면지우기
+            </button>
+        `;
+        this.chatArea.appendChild(buttonElement);
+
+        buttonElement.querySelector('.continue-btn').addEventListener('click', () => {
+            this.loadNewWord();
+            buttonElement.remove();
+        });
+
+        buttonElement.querySelector('.clear-btn').addEventListener('click', () => {
+            this.clearChatArea();
+        });
+
+        this.scrollToBottom();
+    },
+
+    clearChatArea() {
+        this.chatArea.innerHTML = '';
+    },
+
+    scrollToBottom() {
+        this.chatArea.scrollTop = this.chatArea.scrollHeight;
+    }
+};
+
+wordMatching.initialize();
 
 // 학습하기: 의미 맞추기 (여원)
 const wordMeaning = {
