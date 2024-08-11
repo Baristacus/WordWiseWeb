@@ -317,7 +317,7 @@ window.addEventListener('message', function (event) {
     } else if (event.data.action === 'saveOk') {
         // 단어 저장 후 플로팅 요소 숨기기
         hideFloatingElements();
-        showNotification(`단어가 저장되었습니다: ${event.data.word}`);
+        showNotification(`단어가 저장되었습니다: ` + `"` + `${event.data.word}` + `"`);
     }
     return true;
 });
