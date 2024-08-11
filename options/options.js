@@ -492,9 +492,204 @@ const wordMatching = {
 
 wordMatching.initialize();
 
-// 학습하기: 의미 맞추기 (여원)
+// 학습하기: 의미 맞추기
 const wordMeaning = {
+    currentWord: null,
+    wordLists: [],
+    wordMeaningChat: document.getElementById('wordMeaningChat'),
+    wordMeaningInput: document.getElementById('wordMeaningInput'),
+    wordMeaningBtn: document.getElementById('wordMeaningBtn'),
+    
+    setInputDisabled(isDisabled) {
+        this.wordMeaningInput.disabled = isDisabled;
+        this.wordMeaningBtn.disabled = isDisabled;
+    },
+    
+    initialize() {
+        this.wordMeaningBtn.addEventListener('click', () => this.handleUserInput());
+        this.wordMeaningInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.handleUserInput();
+        });
 
+        this.startQuiz();
+    },
+
+    async startQuiz() {
+        await this.getWords();
+
+        if (this.wordLists.length === 0) {
+            this.addMessage('저장된 단어가 없습니다.', 'chat');
+        } else {
+            this.addMessage('의미 맞추기 퀴즈를 시작합니다.', 'chat');
+            this.setQuiz();
+        }
+    },
+
+    async getWords() {
+        const response = await utils.sendMessageToBackground({ action: 'getRecentWords', limit: Infinity });
+        if (response.success && response.words.length >= 0) {
+            this.wordLists = response.words;
+        } else {
+            throw new Error("단어를 불러오는데 실패했습니다.");
+        }
+    },
+
+    addMessage(message, type, result=null) {
+        const messageDiv = document.createElement('div');
+
+        let bgType, alignment, iconType;
+        if (type === 'user') {
+            bgType = 'bg-primary';
+            alignment = 'justify-content-end';
+            iconType = 'bi-chat-quote-fill';
+        } else if (type === 'chat') {
+            alignment = 'justify-content-start'
+            if (result === 'success') {
+                bgType = `bg-${result}`;
+                iconType = 'bi-check-circle-fill';
+            } else if (result === 'warning') {
+                bgType = `bg-${result}`;
+                iconType = 'bi-exclamation-triangle-fill';
+            }  else if (result === 'danger') {
+                bgType = `bg-${result}`;
+                iconType = 'bi-exclamation-circle-fill';
+            } else {
+                bgType = 'bg-dark';
+                iconType = 'bi-robot';
+            }
+        }
+
+        messageDiv.className = `mb-3 d-flex ${alignment}`;
+        messageDiv.innerHTML = `
+            <div class="fs-5 rounded rounded-4 text-white py-1 px-3 ${bgType}" style="max-width: 80%">
+                <i class="bi ${iconType}"></i> ${message}
+            </div>
+        `;
+
+        this.wordMeaningChat.appendChild(messageDiv);
+
+        // 응답일 경우, 계속하기 & 화면지우기 버튼 생성
+        if (result) {
+            // 입력 제한
+            this.setInputDisabled(true);
+
+            const buttonDiv = document.createElement('div');
+            buttonDiv.className = 'mt-1 continue-button-container';
+            
+            const continueButton = document.createElement('button');
+            continueButton.className = 'btn btn-link btn-sm text-decoration-none text-primary ms-4';
+            continueButton.innerHTML = '<i class="bi bi-arrow-return-right"></i> 계속하기';
+            
+            const clearButton = document.createElement('button');
+            clearButton.className = 'btn btn-link btn-sm text-decoration-none text-muted ms-1';
+            clearButton.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i> 화면지우기';
+
+            buttonDiv.appendChild(continueButton);
+            buttonDiv.appendChild(clearButton);
+            this.wordMeaningChat.appendChild(buttonDiv);
+
+            continueButton.addEventListener('click', () => {
+                buttonDiv.remove();
+                this.setQuiz();
+            });
+
+            clearButton.addEventListener('click', () =>  {
+                this.wordMeaningChat.innerHTML = '';
+                this.setQuiz();
+            });
+        }
+
+        
+
+        // 스크롤을 아래로 이동
+        this.wordMeaningChat.scrollTop = this.wordMeaningChat.scrollHeight;
+    },
+
+    getWeightedRandomItem(list, weightKey) {
+        const totalWeight = list.reduce((sum, item) => sum + (item[weightKey] || 1), 0);
+        let randomWeight = Math.random() * totalWeight;
+
+        for (let item of list) {
+            randomWeight -= (item[weightKey] || 1);
+            if (randomWeight <= 0) {
+                return item;
+            }
+        }
+        return list[0];
+    },
+
+    setQuiz() {
+        this.setInputDisabled(false);
+
+        if (this.wordLists.length === 0) {
+            this.addMessage('모든 단어를 학습했습니다!', 'chat');
+            return;
+        }
+
+        this.currentWord = this.getWeightedRandomItem(this.wordLists, 'count');
+        this.wordLists.push(this.currentWord.term);
+
+        const chatQuiz = `단어의 의미를 맞춰보세요: ${this.currentWord.term}`;
+        this.addMessage(chatQuiz, 'chat');
+    },
+
+    async handleUserInput() {
+        const userInput = this.wordMeaningInput.value.trim();
+
+        if (userInput) {
+            this.addMessage(userInput, 'user');
+            this.wordMeaningInput.value = '';
+
+            prompt = `
+                사용자는 여러 텍스트들과 그 텍스트의 의미를 공부하고 있고,
+                텍스트만 보고 텍스트의 의미를 맞추는 퀴즈를 하고 있어.
+
+                텍스트: "${this.currentWord.term}"
+                텍스트의 의미: "${this.currentWord.definition}"
+                사용자 입력: "${userInput}"
+                
+                위의 '텍스트'와 '텍스트의 의미', '사용자 입력'에 대하여
+                사용자가 '텍스트'를 보고 작성한 '사용자 입력'이 '텍스트의 의미'와 얼마나 일치하는지 백분율로 평가해줘.
+                만약 '사용자 입력'에 '텍스트'가 들어가있다면 답변을 '-1'로 해줘.
+                
+                반드시 단순히 숫자로만 답변야해. 예: 78
+                `; 
+
+            const response = await this.callGeminiAPI(prompt);
+            
+            let chatAnswer, chatResult
+            if (response === '-1') {
+                chatAnswer = '단어를 그대로 작성하면 안 됩니다.';
+                chatResult = 'warning';
+            } else if (response >= 85) {
+                chatAnswer = '공부를 열심히 하셨네요!';
+                chatResult = 'success';
+            } else if (response >= 50) {
+                chatAnswer = `조금 더 공부가 필요합니다.<br> 단어장에 저장된 의미는 '${this.currentWord.definition}'입니다.`
+                chatResult = 'warning';
+            } else {
+                chatAnswer = `아닙니다.<br> 단어장에 저장된 의미는 '${this.currentWord.definition}'입니다.`
+                chatResult = 'danger';
+            }
+            this.addMessage(chatAnswer, 'chat', chatResult);
+        }
+    },
+
+    async callGeminiAPI(prompt) {
+        try {
+            const response = await utils.sendMessageToBackground({
+                action: 'callGeminiAPI',
+                prompt: prompt
+            });
+            if (!response.success) {
+                throw new Error(response.error || 'API 호출 실패');
+            }
+            return response.response;
+        } catch (error) {
+            console.error('Gemini API 호출 중 오류 발생:', error);
+            return '죄송합니다. 응답을 생성하는 데 문제가 발생했습니다.';
+        }
+    }
 }
 
 // 학습하기: 문장 만들기
@@ -876,6 +1071,7 @@ async function initialize() {
     setupEventListeners();
     pageManagement.setupNavigationListeners();
     chatBot.initialize();
+    wordMeaning.initialize();
 }
 
 // 페이지 로드 시 초기화
