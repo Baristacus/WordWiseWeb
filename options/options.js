@@ -475,6 +475,7 @@ const wordMatching = {
 
         buttonElement.querySelector('.clear-btn').addEventListener('click', () => {
             this.clearChatArea();
+            this.startLearningSession(); // 화면 지우기 후 학습 세션을 다시 시작
         });
 
         this.scrollToBottom();
