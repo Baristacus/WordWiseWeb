@@ -388,7 +388,7 @@ const wordMatching = {
         if (this.words.length > 0) {
             this.startLearningSession();
         } else {
-            this.showBotMessage("단어가 로드되지 않았습니다. 단어장을 확인해 주세요.");
+            this.showBotMessage("저장된 단어가 없습니다.");
         }
     },
 
@@ -435,23 +435,47 @@ const wordMatching = {
     },
 
     showUserMessage(message) {
-        this.appendMessage(message, 'd-flex justify-content-end mb-3', 'bg-primary');
+        this.addMessage(message, 'user');
     },
 
     showBotMessage(message, isCorrect = null) {
-        let bgClass = 'bg-dark', icon = 'bi-robot';
+        let result = null;
         if (isCorrect !== null) {
-            bgClass = isCorrect ? 'bg-success' : 'bg-danger';
-            icon = isCorrect ? 'bi bi-check-circle-fill' : 'bi bi-exclamation-circle-fill';
+            result = isCorrect ? 'success' : 'danger';
         }
-        this.appendMessage(`<i class="${icon}"></i> ${message}`, 'd-flex justify-content-start mb-3', bgClass);
+        this.addMessage(message, 'chat', result);
     },
 
-    appendMessage(content, classNames, bgClass) {
-        const messageElement = document.createElement('div');
-        messageElement.className = `${classNames}`;
-        messageElement.innerHTML = `<div class="fs-5 badge rounded-pill ${bgClass}">${content}</div>`;
-        this.chatArea.appendChild(messageElement);
+    addMessage(message, type, result = null) {
+        const messageDiv = document.createElement('div');
+
+        let bgType, alignment, iconType;
+        if (type === 'user') {
+            bgType = 'bg-primary';
+            alignment = 'justify-content-end';
+            iconType = 'bi-chat-quote-fill';
+        } else if (type === 'chat') {
+            alignment = 'justify-content-start'
+            if (result === 'success') {
+                bgType = `bg-${result}`;
+                iconType = 'bi-check-circle-fill';
+            } else if (result === 'danger') {
+                bgType = `bg-${result}`;
+                iconType = 'bi-exclamation-circle-fill';
+            } else {
+                bgType = 'bg-dark';
+                iconType = 'bi-robot';
+            }
+        }
+
+        messageDiv.className = `mb-3 d-flex ${alignment}`;
+        messageDiv.innerHTML = `
+            <div class="fs-5 rounded rounded-4 text-white py-1 px-3 ${bgType}" style="max-width: 80%">
+                <i class="bi ${iconType}"></i> ${message}
+            </div>
+        `;
+
+        this.chatArea.appendChild(messageDiv);
         this.scrollToBottom();
     },
 
@@ -489,6 +513,7 @@ const wordMatching = {
         this.chatArea.scrollTop = this.chatArea.scrollHeight;
     }
 };
+
 
 wordMatching.initialize();
 
@@ -627,7 +652,7 @@ const wordMeaning = {
         }
 
         this.currentWord = this.getWeightedRandomItem(this.wordLists, 'count');
-        this.wordLists.push(this.currentWord.term);
+        this.wordLists.pop(this.currentWord.term);
 
         const chatQuiz = `단어의 의미를 맞춰보세요: ${this.currentWord.term}`;
         this.addMessage(chatQuiz, 'chat');
@@ -984,9 +1009,9 @@ const settingsManagement = {
 
     loadSettings() {
         chrome.storage.sync.get(['floatingIcon', 'saveExample', 'highlight'], result => {
-            DOM.floatingIconSwitch.checked = !!result.floatingIcon;
-            DOM.saveExampleSwitch.checked = !!result.saveExample;
-            DOM.highlightSwitch.checked = !!result.highlight;
+            DOM.floatingIconSwitch.checked = result.floatingIcon !== undefined ? result.floatingIcon : true;
+            DOM.saveExampleSwitch.checked = result.saveExample !== undefined ? result.saveExample : true;
+            DOM.highlightSwitch.checked = result.highlight !== undefined ? result.highlight : false;
         });
     }
 };
