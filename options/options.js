@@ -1009,9 +1009,9 @@ const settingsManagement = {
 
     loadSettings() {
         chrome.storage.sync.get(['floatingIcon', 'saveExample', 'highlight'], result => {
-            DOM.floatingIconSwitch.checked = !!result.floatingIcon;
-            DOM.saveExampleSwitch.checked = !!result.saveExample;
-            DOM.highlightSwitch.checked = !!result.highlight;
+            DOM.floatingIconSwitch.checked = result.floatingIcon !== undefined ? result.floatingIcon : true;
+            DOM.saveExampleSwitch.checked = result.saveExample !== undefined ? result.saveExample : true;
+            DOM.highlightSwitch.checked = result.highlight !== undefined ? result.highlight : false;
         });
     }
 };
