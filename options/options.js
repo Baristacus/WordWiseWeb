@@ -388,7 +388,7 @@ const wordMatching = {
         if (this.words.length > 0) {
             this.startLearningSession();
         } else {
-            this.showBotMessage("단어가 로드되지 않았습니다. 단어장을 확인해 주세요.");
+            this.showBotMessage("저장된 단어가 없습니다.");
         }
     },
 
