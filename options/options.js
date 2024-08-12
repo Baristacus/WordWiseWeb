@@ -652,7 +652,7 @@ const wordMeaning = {
         }
 
         this.currentWord = this.getWeightedRandomItem(this.wordLists, 'count');
-        this.wordLists.push(this.currentWord.term);
+        this.wordLists.pop(this.currentWord.term);
 
         const chatQuiz = `단어의 의미를 맞춰보세요: ${this.currentWord.term}`;
         this.addMessage(chatQuiz, 'chat');
